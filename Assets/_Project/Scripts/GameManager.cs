@@ -1,8 +1,10 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using _Project.Scripts._VContainer;
 using _Project.Scripts.AllAppData;
 using _Project.Scripts.Pools;
+using _Project.Scripts.Services;
 using _Project.Scripts.UI.Windows;
 using _Project.Scripts.UI.Windows.GameWindow;
 using _Project.Scripts.UI.Windows.LoadingWindow;
@@ -13,28 +15,34 @@ using VContainer.Unity;
 
 namespace _Project.Scripts
 {
-    public class GameManager : IAsyncStartable
+    public class GameManager : IInitializable, IDisposable
     {
         [Inject] protected AppData AppData;
         [Inject] private WindowsManager _windowsManager;
-        //[Inject] private LevelManager _levelManager;
-        [Inject] private DraggablePool _draggablePool;
+        [Inject] private ResetLevelService _resetLevelService;
+        [Inject] private FileLevelManager _fileLevelManager;
+        [Inject] private PlayableBlockPool _playableBlockPool;
+        [Inject] private ApplicationEventsHandler _applicationEventsHandler;
         
-        public virtual async UniTask StartAsync(CancellationToken cancellation = new CancellationToken())
+        public virtual void Initialize()
         {
-            InjectManager.Inject(this);
-            
             Application.targetFrameRate = 60;
             Input.multiTouchEnabled = false;
             
+            _applicationEventsHandler.OnApplicationQuited += OnApplicationQuit;
+            _applicationEventsHandler.OnApplicationPaused += OnApplicationPause;
+            LoadScene().Forget();
+        }
+
+        private async UniTaskVoid LoadScene()
+        {
             await _windowsManager.ShowWindow<LoadingWindowPresenter>();
-            await UniTask.Delay(2000, cancellationToken: cancellation);
+            //await UniTask.Delay(2000, cancellationToken: cancellation);
             var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
             gameWindow.Initialize();
             gameWindow.ShowFast();
-            // await _levelManager.LoadLevel();
-             _windowsManager.GetWindow<GameWindowPresenter>();
-             _windowsManager.HideWindow<LoadingWindowPresenter>();
+            await StartLevel(AppData.User.CurrentLevel);
+            _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
 
         public virtual async UniTask StartLevel(int levelIndex)
@@ -44,21 +52,26 @@ namespace _Project.Scripts
             AppData.LevelEvents.Dispose();
             AppData.LevelEvents.Initialize();
             AppData.User.CurrentLevel = levelIndex;
-            //await LoadLevel(levelIndex);
+            //_resetLevelService.ResetLevel();
+            //await _fileLevelManager.LoadLevel(levelIndex);
             _windowsManager.GetWindow<GameWindowPresenter>().Initialize();
         }
         
         private void OnApplicationQuit()
         {
-            //_levelManager?.SaveLevel().Forget();
+            _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
         }
         
         private void OnApplicationPause(bool pause)
         {
             if (pause)
-            {
-                //_levelManager?.SaveLevel().Forget();
-            }
+                _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
+        }
+
+        public void Dispose()
+        {
+            _applicationEventsHandler.OnApplicationQuited -= OnApplicationQuit;
+            _applicationEventsHandler.OnApplicationPaused -= OnApplicationPause;
         }
     }
 }

@@ -192,7 +192,7 @@ GameObject:
   - component: {fileID: 6849643860490214181}
   - component: {fileID: 9021527711590414896}
   - component: {fileID: 6730330825431381875}
-  - component: {fileID: 6642984544176430528}
+  - component: {fileID: 1361991505916551672}
   - component: {fileID: 1815783809264359276}
   m_Layer: 0
   m_Name: _WindowsManager
@@ -232,7 +232,7 @@ Canvas:
   m_GameObject: {fileID: 6348516472499966283}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
+  m_RenderMode: 1
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
---- !u!114 &6642984544176430528
+--- !u!114 &1361991505916551672
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

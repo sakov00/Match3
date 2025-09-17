@@ -1,3 +1,4 @@
+using System;
 using _Project.Scripts.Interfaces;
 using _Project.Scripts.UI.DraggableObjects.PlayableBlock;
 using MemoryPack;
@@ -5,6 +6,7 @@ using UnityEngine;
 
 namespace _Project.Scripts.UI.DraggableObjects.Draggable
 {
+    [Serializable]
     [MemoryPackable]
     [MemoryPackUnion(0, typeof(PlayableBlockModel))]
     public abstract partial class DraggableModel : ISavableModel

@@ -13,11 +13,11 @@ using VContainer;
 
 namespace _Project.Scripts.Services
 {
-    public class SaveLoadLevelService
+    public class FileLevelManager
     {
         [Inject] private ObjectsRegistry _objectsRegistry;
-        [Inject] private DraggablePool _draggablePool;
-        [Inject] private ResetLevelService _resetLevelService;
+        [Inject] private PlayableBlockPool _playableBlockPool;
+        
         private static string GetDefaultSavePath(int index) 
             => Path.Combine(Application.streamingAssetsPath, $"level_{index}.dat");
         private static string GetProgressSavePath(int index) 
@@ -31,9 +31,9 @@ namespace _Project.Scripts.Services
         public async UniTask LoadLevel(int index)
         {
             if (File.Exists(GetProgressSavePath(index)))
-                await LoadLevelDefault(index);
-            else
                 await LoadLevelProgress(index);
+            else
+                await LoadLevelDefault(index);
         }
 
         public void RemoveProgress(int index)
@@ -58,7 +58,6 @@ namespace _Project.Scripts.Services
 
         private async UniTask Load(string path)
         {
-            _resetLevelService.ResetLevel();
             if (!File.Exists(path))
             {
                 Debug.LogWarning("Save file not found!");
@@ -78,20 +77,24 @@ namespace _Project.Scripts.Services
         {
             foreach (var model in levelModel.SavableModels)
             {
-                var parent = GameObject.Find(model.ParentPath)?.transform;
-                if (parent == null) return;
-                
-                ISavableLogic savableLogic = model switch
-                {
-                    PlayableBlockModel => 
-                        _draggablePool.Get<PlayableBlockPresenter>(parent, model.SaveAnchoredPosition, model.SaveRotation),
-                    _ => null
-                };
-
+                var parent = string.IsNullOrEmpty(model.ParentPath) ? null : GameObject.Find(model.ParentPath)?.transform;
+                var savableLogic = CreateSavableLogic(model, parent);
                 savableLogic?.SetSavableModel(model);
 
                 await UniTask.Yield();
             }
         }
+
+        private ISavableLogic CreateSavableLogic(ISavableModel model, Transform parent)
+        {
+            return model switch
+            {
+                PlayableBlockModel blockModel => CreatePlayableBlock(blockModel, parent),
+                _ => null
+            };
+        }
+
+        private ISavableLogic CreatePlayableBlock(PlayableBlockModel model, Transform parent) =>
+            _playableBlockPool.Get<PlayableBlockPresenter>(parent, model.GroupId, model.SaveAnchoredPosition, model.SaveRotation);
     }
 }

@@ -8,9 +8,9 @@ using  VContainer;
 
 namespace _Project.Scripts.Pools
 {
-    public class DraggablePool
+    public class PlayableBlockPool
     {
-        [Inject] private DraggableFactory _draggableFactory;
+        [Inject] private PlayableBlockFactory _playableBlockFactory;
         [Inject] private ObjectsRegistry _objectsRegistry;
         
         private Transform _containerTransform;
@@ -23,7 +23,7 @@ namespace _Project.Scripts.Pools
         
         public List<DraggablePresenter> GetAvailableDraggables() => _availableDraggables;
         
-        public T Get<T>(Transform parent, Vector2 anchoredPos = default, Quaternion rotation = default) where T : DraggablePresenter
+        public T Get<T>(Transform parent, int groupId, Vector2 anchoredPos = default, Quaternion rotation = default) where T : DraggablePresenter
         {
             var draggable = _availableDraggables.OfType<T>().FirstOrDefault();
 
@@ -37,7 +37,7 @@ namespace _Project.Scripts.Pools
             }
             else
             {
-                draggable = _draggableFactory.CreateDraggable<T>(parent, anchoredPos, rotation);
+                draggable = _playableBlockFactory.CreatePlayableBlock<T>(parent, groupId, anchoredPos, rotation);
             }
             
             _objectsRegistry.Register(draggable);

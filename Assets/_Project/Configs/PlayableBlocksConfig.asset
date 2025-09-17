@@ -12,4 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 794bddacecb04f119fa7ebda5ecd03d1, type: 3}
   m_Name: PlayableBlocksConfig
   m_EditorClassIdentifier: 
-  <ListPlayableBlockPrefabs>k__BackingField: []
+  <ListPlayableBlockPrefabs>k__BackingField:
+  - {fileID: 2510527410490284628, guid: d7e0c6e7b6a4a3549bea09ce264ff618, type: 3}
+  - {fileID: 2034470649207657710, guid: 143ef3d43802a5c419abd2aee5d5d435, type: 3}

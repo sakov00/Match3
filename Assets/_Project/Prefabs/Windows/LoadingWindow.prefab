@@ -53,7 +53,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _model:
-    _windowType: 0
+    _windowType: 2
   _view: {fileID: 6470306802691435924}
 --- !u!114 &6470306802691435924
 MonoBehaviour:

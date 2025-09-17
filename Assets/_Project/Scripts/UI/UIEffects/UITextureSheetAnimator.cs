@@ -1,62 +1,63 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace _Project.Scripts.UI.UIEffects
 {
+    [RequireComponent(typeof(RawImage))]
     public class UITextureSheetAnimator : MonoBehaviour
     {
         [Header("Components")]
-        public RawImage rawImage;
-
-        [Header("Sprite Sheet Settings")]
-        public int columns = 4;        // Кол-во столбцов в спрайт-листе
-        public int rows = 4;           // Кол-во рядов в спрайт-листе
-        public int totalFrames = 16;   // Реальное кол-во кадров, чтобы не показывать пустоту
+        public RawImage _rawImage;
 
         [Header("Animation Settings")]
-        public float framesPerSecond = 12f;
-        public bool loop = true;       // Зациклить анимацию
+        public int _columns = 4;
+        public int _rows = 4;
+        public int _totalFrames = 16;
+        public bool _loop = true;
 
-        private int currentFrame;
-        private float timer;
+        private int _currentFrame;
+        private float _timer;
+
+        private void OnValidate()
+        {
+            _rawImage ??= GetComponent<RawImage>();
+        }
 
         void Update()
         {
-            if (totalFrames <= 0) return;
+            if (_totalFrames <= 0) return;
 
-            timer += Time.deltaTime;
-            if (timer >= 1f / framesPerSecond)
+            _timer += Time.deltaTime;
+            if (_timer >= 1f / _totalFrames)
             {
-                timer -= 1f / framesPerSecond;
-                currentFrame++;
+                _timer -= 1f / _totalFrames;
+                _currentFrame++;
 
-                if (currentFrame >= totalFrames)
+                if (_currentFrame >= _totalFrames)
                 {
-                    if (loop) currentFrame = 0;
-                    else currentFrame = totalFrames - 1; // останавливаться на последнем кадре
+                    if (_loop) _currentFrame = 0;
+                    else _currentFrame = _totalFrames - 1;
                 }
 
-                int x = currentFrame % columns;
-                int y = currentFrame / columns;
+                var x = _currentFrame % _columns;
+                var y = _currentFrame / _columns;
 
-                // uvRect для RawImage (от верхнего левого)
-                rawImage.uvRect = new Rect(
-                    (float)x / columns,
-                    1f - (float)(y + 1) / rows,
-                    1f / columns,
-                    1f / rows
+                _rawImage.uvRect = new Rect(
+                    (float)x / _columns,
+                    1f - (float)(y + 1) / _rows,
+                    1f / _columns,
+                    1f / _rows
                 );
             }
         }
 
-        // Воспроизведение анимации заново
         public void Play()
         {
-            currentFrame = 0;
-            timer = 0f;
+            _currentFrame = 0;
+            _timer = 0f;
         }
 
-        // Остановить анимацию
         public void Stop()
         {
             enabled = false;

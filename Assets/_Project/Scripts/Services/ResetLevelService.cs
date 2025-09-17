@@ -9,7 +9,7 @@ namespace _Project.Scripts.Services
     public class ResetLevelService
     {
         [Inject] private AppData _appData;
-        [Inject] private DraggablePool _draggablePool;
+        [Inject] private PlayableBlockPool _playableBlockPool;
         [Inject] private ObjectsRegistry _objectsRegistry;
         
         public void ResetLevel()

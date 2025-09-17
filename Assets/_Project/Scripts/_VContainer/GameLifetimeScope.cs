@@ -16,6 +16,7 @@ namespace _Project.Scripts._VContainer
     {
         [SerializeField] protected WindowsManager _windowsManager;
         [SerializeField] protected PoolsManager _poolsManager;
+        [SerializeField] protected ApplicationEventsHandler _applicationEventsHandler;
         
         [Header("Configs")]
         [SerializeField] protected PlayableBlocksConfig _playableBlocksConfig;
@@ -25,7 +26,6 @@ namespace _Project.Scripts._VContainer
         {
             builder.RegisterBuildCallback(InjectManager.Initialize);
             
-            RegisterGameManager(builder);
             RegisterAppData(builder);
             RegisterWindows(builder);
             RegisterRegistries(builder);
@@ -33,16 +33,12 @@ namespace _Project.Scripts._VContainer
             RegisterFactories(builder);
             RegisterSO(builder);
             RegisterServices(builder);
-        }
-
-        public virtual void RegisterGameManager(IContainerBuilder builder)
-        {
-            builder.Register<GameManager>(Lifetime.Singleton).AsSelf().As<IAsyncStartable>();
+            RegisterGameManager(builder);
         }
         
         private void RegisterAppData(IContainerBuilder builder)
         {
-            builder.Register<AppData>(Lifetime.Singleton).AsSelf().As<IInitializable>();
+            builder.Register<AppData>(Lifetime.Singleton).AsSelf();
         }
         
         private void RegisterWindows(IContainerBuilder builder)
@@ -57,12 +53,12 @@ namespace _Project.Scripts._VContainer
         
         private void RegisterPools(IContainerBuilder builder)
         {
-            builder.Register<DraggablePool>(Lifetime.Singleton).AsSelf();
+            builder.Register<PlayableBlockPool>(Lifetime.Singleton).AsSelf();
         }
         
         private void RegisterFactories(IContainerBuilder builder)
         {
-            builder.Register<DraggableFactory>(Lifetime.Singleton).AsSelf();
+            builder.Register<PlayableBlockFactory>(Lifetime.Singleton).AsSelf();
         }
         
         private void RegisterSO(IContainerBuilder builder)
@@ -74,9 +70,15 @@ namespace _Project.Scripts._VContainer
         private void RegisterServices(IContainerBuilder builder)
         {
             builder.RegisterInstance(_poolsManager).AsSelf();
+            builder.RegisterInstance(_applicationEventsHandler).AsSelf();
             builder.Register<GameTimer>(Lifetime.Singleton).As<GameTimer, ITickable>();
             builder.Register<ResetLevelService>(Lifetime.Singleton).AsSelf();
-            builder.Register<SaveLoadLevelService>(Lifetime.Singleton).AsSelf();
+            builder.Register<FileLevelManager>(Lifetime.Singleton).AsSelf();
+        }
+        
+        public virtual void RegisterGameManager(IContainerBuilder builder)
+        {
+            builder.Register<GameManager>(Lifetime.Singleton).AsSelf().As<IInitializable>();
         }
     }
 }

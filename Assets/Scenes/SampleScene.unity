@@ -122,6 +122,50 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &44684336
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 44684338}
+  - component: {fileID: 44684337}
+  m_Layer: 0
+  m_Name: ApplicationEventsHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &44684337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44684336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdd87cd2d63f44d49c47deac3cb634bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &44684338
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44684336}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &788244271
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -214,6 +258,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9021527711590414896, guid: 306df5937629b2741adfd0092282f595, type: 3}
+      propertyPath: m_Camera
+      value: 
+      objectReference: {fileID: 1191492178}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -562,6 +610,7 @@ MonoBehaviour:
   autoInjectGameObjects: []
   _windowsManager: {fileID: 788244272}
   _poolsManager: {fileID: 2124208918}
+  _applicationEventsHandler: {fileID: 44684337}
   _playableBlocksConfig: {fileID: 11400000, guid: 57d66e7fafaf734489a7c1c8b4d0c4b3, type: 2}
   _windowsConfig: {fileID: 11400000, guid: 6931a08c007573a4daef4c33f6de30af, type: 2}
 --- !u!1 &2124208917
@@ -615,6 +664,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 2102276044}
+  - {fileID: 44684338}
   - {fileID: 788244271}
   - {fileID: 1685263978}
   - {fileID: 2124208919}

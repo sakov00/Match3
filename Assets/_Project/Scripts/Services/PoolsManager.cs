@@ -9,12 +9,12 @@ namespace _Project.Scripts.Services
     {
         [SerializeField] private Transform _draggablePoolContainer;
         
-        [Inject] private DraggablePool _draggablePool;
+        [Inject] private PlayableBlockPool _playableBlockPool;
 
         private void Start()
         {
             InjectManager.Inject(this);
-            _draggablePool.SetContainer(_draggablePoolContainer);
+            _playableBlockPool.SetContainer(_draggablePoolContainer);
         }
     }
 }

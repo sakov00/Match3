@@ -3,19 +3,20 @@ using VContainer.Unity;
 
 namespace _Project.Scripts.AllAppData
 {
-    public class AppData : IInitializable, IDisposable
+    public class AppData : IDisposable
     {
-        public LevelEvents LevelEvents { get; private set; }
         public User User { get; private set; }
+        public LevelEvents LevelEvents { get; private set; }
 
-        public void Initialize()
+        public AppData()
         {
-            LevelEvents = new LevelEvents();
             User = new User();
+            LevelEvents = new LevelEvents();
         }
 
         public void Dispose()
         {
+            User.Dispose();
             LevelEvents.Dispose();
         }
     }
