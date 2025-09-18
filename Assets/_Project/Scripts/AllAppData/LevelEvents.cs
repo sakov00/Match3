@@ -1,7 +1,7 @@
 using System;
 using _Project.Scripts._VContainer;
 using _Project.Scripts.Registries;
-using _Project.Scripts.UI.DraggableObjects.PlayableBlock;
+using _Project.Scripts.UI.PlayingObjects.PlayableBlock;
 using UniRx;
 using VContainer;
 using VContainer.Unity;
@@ -23,15 +23,12 @@ namespace _Project.Scripts.AllAppData
             _objectsRegistry
                 .GetTypedList<PlayableBlockPresenter>()
                 .ObserveRemove()
-                .Subscribe(_ => TryInvokeAllEnemiesKilled())
+                .Subscribe(_ => AllBlockDestroyed())
                 .AddTo(_disposables);
         }
 
-        private void TryInvokeAllEnemiesKilled()
+        private void AllBlockDestroyed()
         {
-            // if (_objectsRegistry.GetTypedList<PlayableBlockPresenter>().Any(x => x.Model.WarSide == WarSide.Enemy))
-            //     return;
-
             WinEvent?.Invoke();
         }
         

@@ -14,6 +14,7 @@ namespace _Project.Scripts.UI.UIEffects
         [Header("Curves")]
         [SerializeField] private AnimationCurve _xCurve;
         [SerializeField] private AnimationCurve _yCurve;
+        [SerializeField] private float  _xCurveHeight = 300f;
         
         private Tween _tween;
         private Vector3 _defaultSizeDelta;
@@ -35,15 +36,14 @@ namespace _Project.Scripts.UI.UIEffects
             IsAnimating = true;
             _rectTransform.sizeDelta = _defaultSizeDelta * Random.Range(_randomScale.x, _randomScale.y);
             var randomTime = Random.Range(_randomTime.x, _randomTime.y);
-            var randomX = Random.Range(
-                -Screen.width / 2f + _rectTransform.rect.width / 2 + 150f,
-                Screen.width / 2f - _rectTransform.rect.width / 2 - 150f);
+            var randomX = NextGaussian(0f, Screen.width * 0.25f); 
+            randomX = Mathf.Clamp(randomX, -Screen.width * 0.25f, Screen.width * 0.25f);
             
             _rectTransform.anchoredPosition = new Vector2(randomX, 0);
 
-            _tween = DOVirtual.Float(0f, -1f, randomTime, t =>
+            _tween = DOVirtual.Float(0f, 1f, randomTime, t =>
                 {
-                    var x = _xCurve.Evaluate(t) * 300 + randomX;
+                    var x = _xCurve.Evaluate(t) * _xCurveHeight + randomX;
                     var y = _yCurve.Evaluate(t) * (Screen.height + _rectTransform.rect.height);
                     _rectTransform.anchoredPosition = new Vector2(x, y);
                 })
@@ -56,6 +56,14 @@ namespace _Project.Scripts.UI.UIEffects
             _rectTransform.anchoredPosition = Vector2.zero;
             IsAnimating = false;
             _tween?.Kill();
+        }
+        
+        private float NextGaussian(float mean = 0f, float stdDev = 1f)
+        {
+            var u1 = 1.0f - Random.value;
+            var u2 = 1.0f - Random.value;
+            var randStdNormal = Mathf.Sqrt(-2.0f * Mathf.Log(u1)) * Mathf.Sin(2.0f * Mathf.PI * u2);
+            return mean + stdDev * randStdNormal;
         }
     }
 }

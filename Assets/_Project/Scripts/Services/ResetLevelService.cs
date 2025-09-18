@@ -1,7 +1,9 @@
-using System;
+using System.Linq;
 using _Project.Scripts.AllAppData;
 using _Project.Scripts.Pools;
 using _Project.Scripts.Registries;
+using _Project.Scripts.UI.PlayingObjects.Cell;
+using _Project.Scripts.UI.PlayingObjects.PlayableBlock;
 using VContainer;
 
 namespace _Project.Scripts.Services
@@ -14,12 +16,14 @@ namespace _Project.Scripts.Services
         
         public void ResetLevel()
         {
-            foreach (var obj in _objectsRegistry.GetAllByInterface<IDisposable>())
-            {
-                obj.Dispose();
-            }
+            var cellsList = _objectsRegistry.GetTypedList<CellController>();
+            foreach (var cell in cellsList)
+                cell.Dispose();
             
-            _objectsRegistry.Clear();
+            var playableBlocks = _objectsRegistry.GetTypedList<PlayableBlockPresenter>().ToList();
+            foreach (var obj in playableBlocks)
+                obj.ReturnToPool();
+            playableBlocks.Clear();
         }
     }
 }

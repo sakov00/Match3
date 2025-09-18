@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using _Project.Scripts.Factories;
 using _Project.Scripts.Registries;
-using _Project.Scripts.UI.DraggableObjects.Draggable;
+using _Project.Scripts.UI.PlayingObjects.PlayableBlock;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using  VContainer;
 
@@ -14,41 +15,39 @@ namespace _Project.Scripts.Pools
         [Inject] private ObjectsRegistry _objectsRegistry;
         
         private Transform _containerTransform;
-        private readonly List<DraggablePresenter> _availableDraggables = new();
+        private readonly List<PlayableBlockPresenter> _availablePlayableBlocks = new();
 
         public void SetContainer(Transform transform)
         {
             _containerTransform = transform;
         }
         
-        public List<DraggablePresenter> GetAvailableDraggables() => _availableDraggables;
+        public List<PlayableBlockPresenter> GetAvailablePlayableBlocks() => _availablePlayableBlocks;
         
-        public T Get<T>(Transform parent, int groupId, Vector2 anchoredPos = default, Quaternion rotation = default) where T : DraggablePresenter
+        public async UniTask<T> Get<T>(Transform parent, int groupId) where T : PlayableBlockPresenter
         {
-            var draggable = _availableDraggables.OfType<T>().FirstOrDefault();
+            var draggable = _availablePlayableBlocks.OfType<T>().FirstOrDefault(x => x.Model.GroupId == groupId);
 
             if (draggable != null)
             {
-                _availableDraggables.Remove(draggable);
-                draggable.transform.position = anchoredPos;
-                draggable.transform.rotation = rotation;
+                _availablePlayableBlocks.Remove(draggable);
                 draggable.gameObject.SetActive(true);
                 draggable.transform.SetParent(parent, false);
             }
             else
             {
-                draggable = _playableBlockFactory.CreatePlayableBlock<T>(parent, groupId, anchoredPos, rotation);
+                draggable = await _playableBlockFactory.CreatePlayableBlock<T>(parent, groupId);
             }
             
             _objectsRegistry.Register(draggable);
             return draggable;
         }
 
-        public void Return<T>(T draggable) where T : DraggablePresenter
+        public void Return<T>(T draggable) where T : PlayableBlockPresenter
         {
-            if (!_availableDraggables.Contains(draggable))
+            if (!_availablePlayableBlocks.Contains(draggable))
             {
-                _availableDraggables.Add(draggable);
+                _availablePlayableBlocks.Add(draggable);
             }
             
             draggable.gameObject.SetActive(false);
@@ -56,11 +55,11 @@ namespace _Project.Scripts.Pools
             _objectsRegistry.Unregister(draggable);
         }
         
-        public void Remove<T>(T draggable) where T : DraggablePresenter
+        public void Remove<T>(T draggable) where T : PlayableBlockPresenter
         {
-            if (!_availableDraggables.Contains(draggable))
+            if (!_availablePlayableBlocks.Contains(draggable))
             {
-                _availableDraggables.Remove(draggable);
+                _availablePlayableBlocks.Remove(draggable);
             }
         }
     }

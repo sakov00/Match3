@@ -37,23 +37,21 @@ namespace _Project.Scripts
         private async UniTaskVoid LoadScene()
         {
             await _windowsManager.ShowWindow<LoadingWindowPresenter>();
-            //await UniTask.Delay(2000, cancellationToken: cancellation);
-            var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
-            gameWindow.Initialize();
-            gameWindow.ShowFast();
+            //await UniTask.Delay(1000, cancellationToken: cancellation);
             await StartLevel(AppData.User.CurrentLevel);
             _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
 
         public virtual async UniTask StartLevel(int levelIndex)
         {
-            _windowsManager.GetWindow<GameWindowPresenter>().Dispose();
-            _windowsManager.ShowWindow<GameWindowPresenter>();
+            var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
+            gameWindow.Dispose();
+            gameWindow.ShowFast();
             AppData.LevelEvents.Dispose();
             AppData.LevelEvents.Initialize();
             AppData.User.CurrentLevel = levelIndex;
-            //_resetLevelService.ResetLevel();
-            //await _fileLevelManager.LoadLevel(levelIndex);
+            _resetLevelService.ResetLevel();
+            await _fileLevelManager.LoadLevel(levelIndex);
             _windowsManager.GetWindow<GameWindowPresenter>().Initialize();
         }
         

@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using _Project.Scripts.DTO;
-using _Project.Scripts.Interfaces;
 using _Project.Scripts.Pools;
 using _Project.Scripts.Registries;
-using _Project.Scripts.UI.DraggableObjects.PlayableBlock;
+using _Project.Scripts.UI.PlayingObjects.Cell;
+using _Project.Scripts.UI.PlayingObjects.PlayableBlock;
 using Cysharp.Threading.Tasks;
 using K4os.Compression.LZ4;
 using MemoryPack;
@@ -44,10 +45,9 @@ namespace _Project.Scripts.Services
 
         private async UniTask Save(string path)
         {
-            var allObjects = _objectsRegistry.GetAllByInterface<ISavableLogic>();
-            
+            var allCells = _objectsRegistry.GetTypedList<CellController>();
             var levelModel = new LevelModel();
-            levelModel.SavableModels.AddRange(allObjects.Select(o => o.GetSavableModel()).ToList());
+            levelModel.SavableModels.AddRange(allCells.Select(o => o.GetSavableModel()).ToList());
 
             var data = MemoryPackSerializer.Serialize(levelModel);
             var compressed = LZ4Pickler.Pickle(data);
@@ -75,26 +75,26 @@ namespace _Project.Scripts.Services
 
         private async UniTask InstantiateLoadedObjects(LevelModel levelModel)
         {
+            var allCells = _objectsRegistry.GetTypedList<CellController>();
+            var tasks = new List<UniTask>();
+
             foreach (var model in levelModel.SavableModels)
             {
-                var parent = string.IsNullOrEmpty(model.ParentPath) ? null : GameObject.Find(model.ParentPath)?.transform;
-                var savableLogic = CreateSavableLogic(model, parent);
-                savableLogic?.SetSavableModel(model);
+                if(model?.PlayableBlockModel == null) continue;
+                var needCell = allCells.First(x => x.Model.ColumnIndex == model.ColumnIndex && x.Model.RowIndex == model.RowIndex);
+                var task = _playableBlockPool.Get<PlayableBlockPresenter>(needCell.transform, model.PlayableBlockModel.GroupId)
+                    .ContinueWith(blockPresenter =>
+                {
+                    needCell.SetSavableModel(model);
+                    needCell.PlayableBlockPresenter = blockPresenter;
+                    blockPresenter.CellController = needCell;
+                });
 
-                await UniTask.Yield();
+                tasks.Add(task);
             }
-        }
 
-        private ISavableLogic CreateSavableLogic(ISavableModel model, Transform parent)
-        {
-            return model switch
-            {
-                PlayableBlockModel blockModel => CreatePlayableBlock(blockModel, parent),
-                _ => null
-            };
+            await UniTask.WhenAll(tasks);
+            await UniTask.Yield();
         }
-
-        private ISavableLogic CreatePlayableBlock(PlayableBlockModel model, Transform parent) =>
-            _playableBlockPool.Get<PlayableBlockPresenter>(parent, model.GroupId, model.SaveAnchoredPosition, model.SaveRotation);
     }
 }

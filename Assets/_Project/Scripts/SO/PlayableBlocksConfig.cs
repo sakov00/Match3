@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using _Project.Scripts.UI.DraggableObjects.PlayableBlock;
+using _Project.Scripts.UI.PlayingObjects.PlayableBlock;
 using UnityEngine;
 
 namespace _Project.Scripts.SO

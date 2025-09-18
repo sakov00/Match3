@@ -1,6 +1,7 @@
 using _Project.Scripts.AllAppData;
 using _Project.Scripts.Registries;
 using _Project.Scripts.Services;
+using _Project.Scripts.UI.PlayingObjects;
 using _Project.Scripts.UI.Windows.BaseWindow;
 using _Project.Scripts.UI.Windows.LoadingWindow;
 using Cysharp.Threading.Tasks;
@@ -13,11 +14,13 @@ namespace _Project.Scripts.UI.Windows.GameWindow
     public class GameWindowPresenter : BaseWindowPresenter
     {
         [Inject] private AppData _appData;
+        [Inject] private FileLevelManager _fileLevelManager;
         [Inject] private ObjectsRegistry _objectsRegistry;
         [Inject] private GameManager _gameManager;
         
         [SerializeField] private GameWindowModel _model;
         [SerializeField] private GameWindowView _view;
+        [SerializeField] private GameZone _gameZone;
         
         protected override BaseWindowModel BaseModel => _model;
         protected override BaseWindowView BaseView => _view;
@@ -35,20 +38,24 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         public void Initialize()
         {
             _appData.LevelEvents.WinEvent += WinHandle;
+            _gameZone.Initialize();
         }
 
         private async UniTaskVoid NextLevel()
         {
-            WindowsManager.ShowWindow<LoadingWindowPresenter>();
-            _appData.User.CurrentLevel =+ 1;
+            await WindowsManager.ShowWindow<LoadingWindowPresenter>();
+            _appData.User.CurrentLevel += 1;
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
+            await UniTask.Delay(1000);
             WindowsManager.HideWindow<LoadingWindowPresenter>();
         }
         
         private async UniTaskVoid RestartLevel()
         {
-            WindowsManager.ShowWindow<LoadingWindowPresenter>();
+            await WindowsManager.ShowWindow<LoadingWindowPresenter>();
+            _fileLevelManager.RemoveProgress(_appData.User.CurrentLevel);
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
+            await UniTask.Delay(1000);
             WindowsManager.HideWindow<LoadingWindowPresenter>();
         }
 
@@ -61,6 +68,7 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         {
             _appData.LevelEvents.WinEvent -= WinHandle;
             _view.Dispose();
+            _gameZone.Dispose();
         }
     }
 }
