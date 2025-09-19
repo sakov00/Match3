@@ -21,7 +21,6 @@ namespace _Project.Scripts.Factories
                 {
                     playableBlockPresenter = _resolver.Instantiate(tPrefab, parent);
                     await UniTask.Yield();
-                    playableBlockPresenter.Initialize();
                     break;
                 }
             }

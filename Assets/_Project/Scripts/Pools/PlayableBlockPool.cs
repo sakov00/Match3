@@ -26,40 +26,40 @@ namespace _Project.Scripts.Pools
         
         public async UniTask<T> Get<T>(Transform parent, int groupId) where T : PlayableBlockPresenter
         {
-            var draggable = _availablePlayableBlocks.OfType<T>().FirstOrDefault(x => x.Model.GroupId == groupId);
+            var playableBlock = _availablePlayableBlocks.OfType<T>().FirstOrDefault(x => x.Model.GroupId == groupId);
 
-            if (draggable != null)
+            if (playableBlock != null)
             {
-                _availablePlayableBlocks.Remove(draggable);
-                draggable.gameObject.SetActive(true);
-                draggable.transform.SetParent(parent, false);
+                _availablePlayableBlocks.Remove(playableBlock);
+                playableBlock.gameObject.SetActive(true);
+                playableBlock.transform.SetParent(parent, false);
             }
             else
             {
-                draggable = await _playableBlockFactory.CreatePlayableBlock<T>(parent, groupId);
+                playableBlock = await _playableBlockFactory.CreatePlayableBlock<T>(parent, groupId);
             }
             
-            _objectsRegistry.Register(draggable);
-            return draggable;
+            playableBlock.Initialize();
+            return playableBlock;
         }
 
-        public void Return<T>(T draggable) where T : PlayableBlockPresenter
+        public void Return<T>(T playableBlock) where T : PlayableBlockPresenter
         {
-            if (!_availablePlayableBlocks.Contains(draggable))
+            if (!_availablePlayableBlocks.Contains(playableBlock))
             {
-                _availablePlayableBlocks.Add(draggable);
+                _availablePlayableBlocks.Add(playableBlock);
             }
             
-            draggable.gameObject.SetActive(false);
-            draggable.transform.SetParent(_containerTransform, false); 
-            _objectsRegistry.Unregister(draggable);
+            playableBlock.gameObject.SetActive(false);
+            playableBlock.transform.SetParent(_containerTransform, false); 
+            _objectsRegistry.Unregister(playableBlock);
         }
         
-        public void Remove<T>(T draggable) where T : PlayableBlockPresenter
+        public void Remove<T>(T playableBlock) where T : PlayableBlockPresenter
         {
-            if (!_availablePlayableBlocks.Contains(draggable))
+            if (!_availablePlayableBlocks.Contains(playableBlock))
             {
-                _availablePlayableBlocks.Remove(draggable);
+                _availablePlayableBlocks.Remove(playableBlock);
             }
         }
     }

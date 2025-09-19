@@ -4,7 +4,6 @@ using System.Threading;
 using _Project.Scripts._VContainer;
 using _Project.Scripts.Registries;
 using _Project.Scripts.UI.PlayingObjects.Cell;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using VContainer;
@@ -19,7 +18,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         [SerializeField] private List<Column> _allColumns;
 
         private ColumnManager _columnManager;
-        private BlockMover _blockMover;
+        private PlayerBlockMover _playerBlockMover;
         private Vector2 _dragStartPos;
         private CancellationTokenSource _cts;
 
@@ -32,7 +31,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         {
             InjectManager.Inject(this);
             _columnManager = new ColumnManager(_allColumns);
-            _blockMover = new BlockMover();
+            _playerBlockMover = new PlayerBlockMover();
         }
 
         public void Initialize()
@@ -67,16 +66,14 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
             if (targetCell.PlayableBlockPresenter == null)
             {
-                await _blockMover.MoveToEmptyCell(oldCell, targetCell, direction, _cts.Token);
-                if (direction == Vector2Int.left || direction == Vector2Int.right)
-                {
-                    await _blockMover.DropBlockDown(targetCell, _columnManager.ActiveColumns[targetCell.Model.ColumnIndex], _cts.Token);
-                }
+                await _playerBlockMover.MoveToEmptyCell(oldCell, targetCell, direction, _cts.Token);
             }
             else
             {
-                await _blockMover.SwapBlocks(oldCell, targetCell, direction, _cts.Token);
+                await _playerBlockMover.SwapBlocks(oldCell, targetCell, direction, _cts.Token);
             }
+
+            _columnManager.CheckGameZone();
         }
         
         private Vector2Int GetDirection(Vector2 delta)

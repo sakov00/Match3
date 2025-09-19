@@ -21,6 +21,7 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
         {
             InjectManager.Inject(this);
             _objectsRegistry.Register(this);
+            View.ShowFast();
         }
 
         public virtual void ReturnToPool()

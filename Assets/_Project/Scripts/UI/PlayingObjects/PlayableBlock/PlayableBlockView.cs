@@ -26,11 +26,13 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
         
         public virtual void ShowFast()
         {
+            _canvasGroup.DOKill();
             _canvasGroup.alpha = 1;
         }
         
         public virtual void HideFast()
         {
+            _canvasGroup.DOKill();
             _canvasGroup.alpha = 0;
         }
     }
