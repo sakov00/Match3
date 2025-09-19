@@ -17,18 +17,10 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
         [field:SerializeField] public PlayableBlockModel Model { get; protected set; }
         [field:SerializeField] public PlayableBlockView View { get; protected set; }
         
-        public CellController CellController { get; set; }
-        
-        public Action<PointerEventData, PlayableBlockPresenter> OnBeginedDrag;
-        public Action<PointerEventData, PlayableBlockPresenter> OnEndedDrag;
-        
         public virtual void Initialize()
         {
             InjectManager.Inject(this);
             _objectsRegistry.Register(this);
-            View.Initialize(
-                eventData => OnBeginedDrag?.Invoke(eventData, this),
-                eventData => OnEndedDrag?.Invoke(eventData, this));
         }
 
         public virtual void ReturnToPool()
@@ -39,9 +31,6 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
 
         public virtual void Dispose()
         {
-            OnBeginedDrag = null;
-            OnEndedDrag = null;
-            View.Dispose();
             _objectsRegistry.Unregister(this);
         }
     }

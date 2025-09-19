@@ -87,7 +87,6 @@ namespace _Project.Scripts.Services
                 {
                     needCell.SetSavableModel(model);
                     needCell.PlayableBlockPresenter = blockPresenter;
-                    blockPresenter.CellController = needCell;
                 });
 
                 tasks.Add(task);

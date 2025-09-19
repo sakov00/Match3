@@ -57,13 +57,13 @@ namespace _Project.Scripts
         
         private void OnApplicationQuit()
         {
-            _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
+            // _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
         }
         
         private void OnApplicationPause(bool pause)
         {
-            if (pause)
-                _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
+            // if (pause)
+            //     _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
         }
 
         public void Dispose()
