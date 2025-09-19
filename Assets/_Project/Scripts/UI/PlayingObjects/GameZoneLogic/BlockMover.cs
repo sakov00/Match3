@@ -1,3 +1,4 @@
+using System.Threading;
 using _Project.Scripts.UI.PlayingObjects.Cell;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -9,18 +10,27 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
     {
         private readonly float _duration = 0.25f;
 
-        public async UniTask MoveToEmptyCell(CellController oldCell, CellController targetCell, Vector2Int direction)
+        public async UniTask MoveToEmptyCell(CellController oldCell, CellController targetCell, Vector2Int direction, CancellationToken token)
         {
             var oldBlock = oldCell.PlayableBlockPresenter;
+            var duration = 0.25f;
 
-            oldBlock.transform.SetParent(targetCell.transform, true);
-            await oldBlock.transform.DOMove(targetCell.transform.position, _duration).Play();
+            if (direction == Vector2Int.up)
+                oldBlock.transform.SetParent(targetCell.transform, true);
+            if (direction == Vector2Int.right || direction == Vector2Int.left)
+                oldBlock.transform.SetParent(targetCell.transform, true);
+            
+            await oldBlock.transform.DOMove(targetCell.transform.position, duration)
+                .Play().WithCancellation(token);
+            
+            if (direction == Vector2Int.down)
+                oldBlock.transform.SetParent(targetCell.transform, true);
 
             oldCell.PlayableBlockPresenter = null;
             targetCell.PlayableBlockPresenter = oldBlock;
         }
 
-        public async UniTask SwapBlocks(CellController oldCell, CellController targetCell, Vector2Int direction)
+        public async UniTask SwapBlocks(CellController oldCell, CellController targetCell, Vector2Int direction, CancellationToken token)
         {
             var oldBlock = oldCell.PlayableBlockPresenter;
             var targetBlock = targetCell.PlayableBlockPresenter;
@@ -36,7 +46,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             var sequence = DOTween.Sequence();
             sequence.Append(oldBlock.transform.DOMove(targetCell.transform.position, _duration));
             sequence.Join(targetBlock.transform.DOMove(oldCell.transform.position, _duration));
-            await sequence.Play();
+            await sequence.Play().WithCancellation(token);
 
             if (direction == Vector2Int.up) targetBlock.transform.SetParent(oldCell.transform, true);
             if (direction == Vector2Int.down) oldBlock.transform.SetParent(targetCell.transform, true);
@@ -45,18 +55,24 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             targetCell.PlayableBlockPresenter = oldBlock;
         }
 
-        public async UniTask DropBlockDown(CellController cell, Column column)
+        public async UniTask DropBlockDown(CellController cell, Column column, CancellationToken token)
         {
             var block = cell.PlayableBlockPresenter;
-            int rowIndex = cell.Model.RowIndex;
+            var rowIndex = cell.Model.RowIndex;
+            
+            if(rowIndex - 1 < 0) return;
 
             CellController lowestEmptyCell = null;
-            for (int row = rowIndex - 1; row >= 0; row--)
+            for (int row = rowIndex - 1; row >= 0 ; row--)
             {
                 if (column.Cells[row].PlayableBlockPresenter == null)
+                {
                     lowestEmptyCell = column.Cells[row];
+                }
                 else
+                {
                     break;
+                }
             }
 
             if (lowestEmptyCell == null) return;
@@ -64,7 +80,9 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             cell.PlayableBlockPresenter = null;
             lowestEmptyCell.PlayableBlockPresenter = block;
             block.transform.SetParent(lowestEmptyCell.transform, true);
-            await block.transform.DOMove(lowestEmptyCell.transform.position, _duration).Play();
+
+            await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f)
+                .Play().WithCancellation(token);
         }
     }
 }

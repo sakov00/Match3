@@ -8,6 +8,7 @@ using Cysharp.Threading.Tasks;
 using UniRx;
 using UnityEngine;
 using VContainer;
+using GameZone = _Project.Scripts.UI.PlayingObjects.GameZoneLogic.GameZone;
 
 namespace _Project.Scripts.UI.Windows.GameWindow
 {
