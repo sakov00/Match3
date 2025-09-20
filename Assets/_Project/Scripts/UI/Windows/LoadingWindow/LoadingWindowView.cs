@@ -12,23 +12,21 @@ namespace _Project.Scripts.UI.Windows.LoadingWindow
 
         [Header("UI Effects")]
         [SerializeField] private RotateUIAroundPoint _rotateUIAroundPoint;
-        
-        protected override BaseWindowPresenter BasePresenter => _presenter;
 
         public override Tween Show()
         {
-            var sequence = DOTween.Sequence();
-            sequence.AppendCallback(() => _rotateUIAroundPoint.StartRotation());
-            sequence.Append(base.Show());
-            return sequence;
+            var sequenceShow = DOTween.Sequence();
+            sequenceShow.AppendCallback(() => _rotateUIAroundPoint.StartRotation());
+            sequenceShow.Append(base.Show());
+            return sequenceShow;
         }
         
         public override Tween Hide()
         {
-            var sequence = DOTween.Sequence();
-            sequence.AppendCallback(() => _rotateUIAroundPoint.StopRotation());
-            sequence.Append(base.Hide());
-            return sequence;
+            var sequenceHide = DOTween.Sequence();
+            sequenceHide.AppendCallback(() => _rotateUIAroundPoint.StopRotation());
+            sequenceHide.Append(base.Hide());
+            return sequenceHide;
         }
     }
 }

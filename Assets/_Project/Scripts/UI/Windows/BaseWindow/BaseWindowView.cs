@@ -6,7 +6,6 @@ namespace _Project.Scripts.UI.Windows.BaseWindow
     public abstract class BaseWindowView : MonoBehaviour
     {
         [SerializeField] protected CanvasGroup _canvasGroup;
-        protected abstract BaseWindowPresenter BasePresenter { get; }
         
         public virtual Tween Show()
         {

@@ -33,20 +33,22 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         
         private CancellationTokenSource _balloonsCts;
         
-        protected override BaseWindowPresenter BasePresenter => _presenter;
-        
         private void Start()
         {
             _presenter.NextLevelCommand.BindTo(_nextLevelButton).AddTo(this);
             _presenter.RestartLevelCommand.BindTo(_restartLevelButton).AddTo(this);
         }
-        
+
+        public void Initialize()
+        {
+            StartBalloonsLoop();
+        }
+
         public override Tween Show()
         {
             var sequence = DOTween.Sequence();
             sequence.AppendCallback(() => gameObject.SetActive(true));
             sequence.Append(_canvasGroup.DOFade(1f, 0.5f).From(0));
-            sequence.AppendCallback(StartBalloonsLoop);
             return sequence;
         }
 
@@ -54,11 +56,7 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         {
             var sequence = DOTween.Sequence();
             sequence.Append(_canvasGroup.DOFade(0f, 0.5f).From(1));
-            sequence.AppendCallback(() =>
-            {
-                gameObject.SetActive(false);
-                StopBalloonsLoop();
-            });
+            sequence.AppendCallback(() => gameObject.SetActive(false));
             return sequence;
         }
         

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using _Project.Scripts.UI.PlayingObjects.Cell;
+using _Project.Scripts.UI.PlayingObjects.Column;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine.EventSystems;
@@ -10,11 +11,11 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 {
     public class ColumnManager
     {
-        public List<Column> AllColumns { get; private set; }
-        public List<Column> ActiveColumns { get; private set; } = new();
-        public List<Column> InactiveColumns { get; private set; } = new();
+        public List<ColumnController> AllColumns { get; private set; }
+        public List<ColumnController> ActiveColumns { get; private set; } = new();
+        public List<ColumnController> InactiveColumns { get; private set; } = new();
 
-        public ColumnManager(List<Column> allColumns)
+        public ColumnManager(List<ColumnController> allColumns)
         {
             AllColumns = allColumns;
         }
@@ -23,28 +24,30 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         {
             ActiveColumns.Clear();
             InactiveColumns.Clear();
-
-            var activeIndices = AllColumns
-                .Select((col, index) => new { col, index })
-                .Where(x => x.col.Cells.Any(c => c.PlayableBlockPresenter != null))
-                .Select(x => x.index)
-                .ToList();
-
-            if (!activeIndices.Any())
+            ActiveColumns = AllColumns.Where(x => x.Model.ColumnIsActive == true).ToList();
+            InactiveColumns = AllColumns.Where(x => x.Model.ColumnIsActive == false).ToList();
+        }
+        
+        public async UniTask ResolveGameZone(CancellationToken token)
+        {
+            bool changed;
+            do
             {
-                InactiveColumns.AddRange(AllColumns);
-                return;
-            }
+                changed = false;
+                if (await CheckGameZone())
+                {
+                    changed = true;
+                }
 
-            var firstActive = activeIndices.First();
-            var lastActive = activeIndices.Last();
+                if (await NormalizeGameZone(token))
+                {
+                    changed = true;
+                }
 
-            ActiveColumns.AddRange(AllColumns.Skip(firstActive).Take(lastActive - firstActive + 1));
-            InactiveColumns.AddRange(AllColumns.Take(firstActive));
-            InactiveColumns.AddRange(AllColumns.Skip(lastActive + 1));
+            } while (changed);
         }
 
-        public void CheckGameZone()
+        private async UniTask<bool> CheckGameZone()
         {
             var width = ActiveColumns.Count;
             var height = ActiveColumns[0].Cells.Count;
@@ -56,24 +59,33 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             MarkHorizontalLines(grid, lineMarks, width, height);
             MarkVerticalLines(grid, lineMarks, width, height);
 
+            var removedAny = false;
+            var tasks = new List<UniTask>();
             for (var x = 0; x < width; x++)
             {
                 for (var y = 0; y < height; y++)
                 {
                     if (!lineMarks[x, y] || visited[x, y]) continue;
-                    
+
                     var connected = new List<(int x, int y)>();
                     var groupId = grid[x, y];
                     CollectConnected(x, y, groupId, grid, visited, connected);
 
                     foreach (var pos in connected)
                     {
-                        ActiveColumns[pos.x].Cells[pos.y].PlayableBlockPresenter.View.Hide();
-                        ActiveColumns[pos.x].Cells[pos.y].PlayableBlockPresenter = null;
+                        var cell = ActiveColumns[pos.x].Cells[pos.y];
+                        var task = cell.PlayableBlockPresenter.DestroyAnimStart()
+                            .ContinueWith(() => cell.PlayableBlockPresenter = null);
+                        tasks.Add(task);
                     }
+
+                    removedAny = true;
                 }
             }
+            await UniTask.WhenAll(tasks);
+            return removedAny;
         }
+
 
         private void CollectConnected(int x, int y, int groupId, int[,] grid, bool[,] visited, List<(int x, int y)> connected)
         {
@@ -151,24 +163,44 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             }
         }
         
-        public void NormalizeGameZone()
+        public async UniTask<bool> NormalizeGameZone(CancellationToken token)
         {
-            // DropBlockDown()
+            var moved = false;
+            var tasks = new List<UniTask<bool>>();
+
+            foreach (var column in ActiveColumns)
+            {
+                for (var row = column.Cells.Count - 1; row >= 0; row--)
+                {
+                    var cell = column.Cells[row];
+                    if (cell.PlayableBlockPresenter != null)
+                    {
+                        tasks.Add(DropBlockDown(cell, column, token));
+                    }
+                }
+            }
+
+            if (tasks.Count <= 0) return moved;
+            
+            var results = await UniTask.WhenAll(tasks);
+            moved = results.Any(r => r);
+
+            return moved;
         }
         
-        public async UniTask DropBlockDown(CellController cell, Column column, CancellationToken token)
+        private async UniTask<bool> DropBlockDown(CellController cell, ColumnController columnController, CancellationToken token)
         {
             var block = cell.PlayableBlockPresenter;
             var rowIndex = cell.Model.RowIndex;
             
-            if(rowIndex - 1 < 0) return;
+            if(rowIndex - 1 < 0) return false;
 
             CellController lowestEmptyCell = null;
             for (int row = rowIndex - 1; row >= 0 ; row--)
             {
-                if (column.Cells[row].PlayableBlockPresenter == null)
+                if (columnController.Cells[row].PlayableBlockPresenter == null)
                 {
-                    lowestEmptyCell = column.Cells[row];
+                    lowestEmptyCell = columnController.Cells[row];
                 }
                 else
                 {
@@ -176,14 +208,17 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                 }
             }
 
-            if (lowestEmptyCell == null) return;
+            if (lowestEmptyCell == null) return false;
+            
+            block.transform.DOComplete(true);
+            token.Register(() => block.transform.DOComplete(true));
 
             cell.PlayableBlockPresenter = null;
             lowestEmptyCell.PlayableBlockPresenter = block;
             block.transform.SetParent(lowestEmptyCell.transform, true);
 
-            await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f)
-                .Play().WithCancellation(token);
+            await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f).Play();
+            return true;
         }
 
         public void SubscribeToActiveCells(System.Action<PointerEventData, CellController> onBeginDrag,

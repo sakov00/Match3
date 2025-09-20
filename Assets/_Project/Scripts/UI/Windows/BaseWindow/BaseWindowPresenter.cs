@@ -9,19 +9,16 @@ namespace _Project.Scripts.UI.Windows.BaseWindow
     public abstract class BaseWindowPresenter : MonoBehaviour
     {
         [Inject] protected WindowsManager WindowsManager { get; private set; }
-        
-        protected abstract BaseWindowModel BaseModel { get; }
-        protected abstract BaseWindowView BaseView { get; }
-        public WindowType WindowType => BaseModel.WindowType;
+        public abstract WindowType WindowType { get; }
 
         protected virtual void Awake()
         {
             InjectManager.Inject(this);
         }
 
-        public Tween Show() => BaseView.Show();
-        public Tween Hide() => BaseView.Hide();
-        public void ShowFast() => BaseView.ShowFast();
-        public void HideFast() => BaseView.HideFast();
+        public abstract Tween Show();
+        public abstract Tween Hide();
+        public abstract void ShowFast();
+        public abstract void HideFast();
     }
 }

@@ -4,6 +4,8 @@ using System.Threading;
 using _Project.Scripts._VContainer;
 using _Project.Scripts.Registries;
 using _Project.Scripts.UI.PlayingObjects.Cell;
+using _Project.Scripts.UI.PlayingObjects.Column;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using VContainer;
@@ -15,7 +17,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         [Inject] private ObjectsRegistry _objectsRegistry;
 
         [SerializeField] private RectTransform _rectTransform;
-        [SerializeField] private List<Column> _allColumns;
+        [SerializeField] private List<ColumnController> _allColumns;
 
         private ColumnManager _columnManager;
         private PlayerBlockMover _playerBlockMover;
@@ -40,12 +42,21 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             _columnManager.SeparateColumns();
             _columnManager.SubscribeToActiveCells(OnBeginDrag, OnEndDrag);
             CenterActiveColumns();
+            _columnManager.ResolveGameZone(_cts.Token).Forget();
         }
 
         private void CenterActiveColumns()
         {
-            var offset = _columnManager.InactiveColumns.Sum(c => c.FieldSize.x) / 2;
-            _rectTransform.anchoredPosition = new Vector2(offset, _rectTransform.anchoredPosition.y);
+            var activeColumns = _allColumns.Where(c => c.Model.ColumnIsActive).ToList();
+            if (activeColumns.Count == 0) return;
+
+            var leftEdgeFromAll = _allColumns.Min(c => c.RectTransform.anchoredPosition.x - c.RectTransform.rect.width / 2f);
+            var rightEdgeFromAll = _allColumns.Max(c => c.RectTransform.anchoredPosition.x + c.RectTransform.rect.width / 2f);
+            var leftEdgeFromActive = activeColumns.Min(c => c.RectTransform.anchoredPosition.x - c.RectTransform.rect.width / 2f);
+            var rightEdgeFromActive = activeColumns.Max(c => c.RectTransform.anchoredPosition.x + c.RectTransform.rect.width / 2f);
+            var centerX = ((leftEdgeFromActive - leftEdgeFromAll) + (rightEdgeFromActive - rightEdgeFromAll)) / 2f;
+
+            _rectTransform.anchoredPosition = new Vector2(-centerX, _rectTransform.anchoredPosition.y);
         }
 
         private void OnBeginDrag(PointerEventData eventData, CellController oldCell)
@@ -67,13 +78,14 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             if (targetCell.PlayableBlockPresenter == null)
             {
                 await _playerBlockMover.MoveToEmptyCell(oldCell, targetCell, direction, _cts.Token);
+                await _columnManager.NormalizeGameZone(_cts.Token);
             }
             else
             {
                 await _playerBlockMover.SwapBlocks(oldCell, targetCell, direction, _cts.Token);
             }
 
-            _columnManager.CheckGameZone();
+            await _columnManager.ResolveGameZone(_cts.Token);
         }
         
         private Vector2Int GetDirection(Vector2 delta)

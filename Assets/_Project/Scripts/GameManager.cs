@@ -28,22 +28,13 @@ namespace _Project.Scripts
         {
             Application.targetFrameRate = 60;
             Input.multiTouchEnabled = false;
-            
-            _applicationEventsHandler.OnApplicationQuited += OnApplicationQuit;
-            _applicationEventsHandler.OnApplicationPaused += OnApplicationPause;
-            LoadScene().Forget();
-        }
-
-        private async UniTaskVoid LoadScene()
-        {
-            await _windowsManager.ShowWindow<LoadingWindowPresenter>();
-            //await UniTask.Delay(1000, cancellationToken: cancellation);
-            await StartLevel(AppData.User.CurrentLevel);
-            _windowsManager.HideWindow<LoadingWindowPresenter>();
+            StartLevel(AppData.User.CurrentLevel).Forget();
         }
 
         public virtual async UniTask StartLevel(int levelIndex)
         {
+            Dispose();
+            await _windowsManager.ShowWindow<LoadingWindowPresenter>();
             var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
             gameWindow.Dispose();
             gameWindow.ShowFast();
@@ -53,17 +44,20 @@ namespace _Project.Scripts
             _resetLevelService.ResetLevel();
             await _fileLevelManager.LoadLevel(levelIndex);
             _windowsManager.GetWindow<GameWindowPresenter>().Initialize();
+            _applicationEventsHandler.OnApplicationQuited += OnApplicationQuit;
+            _applicationEventsHandler.OnApplicationPaused += OnApplicationPause;
+            _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
         
         private void OnApplicationQuit()
         {
-            // _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
+            _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
         }
         
         private void OnApplicationPause(bool pause)
         {
-            // if (pause)
-            //     _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
+            if (pause)
+                _fileLevelManager?.SaveLevelProgress(AppData.User.CurrentLevel).Forget();
         }
 
         public void Dispose()

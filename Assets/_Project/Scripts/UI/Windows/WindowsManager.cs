@@ -52,11 +52,8 @@ namespace _Project.Scripts.UI.Windows
                 _cachedWindows.Add(typeof(T), window);
             }
             
-            var sequence = DOTween.Sequence();
-            sequence.Append(window.Show());
-            if (windowType == WindowType.Popup) sequence.Join(ShowDarkBackground());
-            sequence.SetUpdate(true);
-            return sequence;
+            if (windowType == WindowType.Popup) ShowDarkBackground();
+            return window.Show();
         }
         
         public Tween HideWindow<T>() where T : BaseWindowPresenter
@@ -67,12 +64,9 @@ namespace _Project.Scripts.UI.Windows
                 window = _resolver.Instantiate(_windowsConfig.Windows[typeof(T)], parent: GetParent(windowType));
                 _cachedWindows.Add(typeof(T), window);
             }
-    
-            var sequence = DOTween.Sequence();
-            sequence.Append(window.Hide());
-            if (windowType == WindowType.Popup) sequence.Join(HideDarkBackground());
-            sequence.SetUpdate(true);
-            return sequence;
+
+            if (windowType == WindowType.Popup) HideDarkBackground();
+            return window.Hide();
         }
         
         private Tween ShowDarkBackground()

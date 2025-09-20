@@ -1,39 +1,30 @@
-using System;
-using DG.Tweening;
+using System.Threading;
+using _Project.Scripts.UI.UIEffects;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
 {
     public class PlayableBlockView : MonoBehaviour
     {
-        [SerializeField] private CanvasGroup _canvasGroup;
+        [SerializeField] private UITextureSheetAnimator _uiTextureSheetAnimator;
         
-        private void OnValidate()
+        public virtual async UniTask StartIdleAnim()
         {
-            _canvasGroup ??= GetComponent<CanvasGroup>();
+            _uiTextureSheetAnimator.Stop();
+            await _uiTextureSheetAnimator.PlayAsync("Idle");
+        }
+        
+        public virtual async UniTask DestroyAnim()
+        {
+            _uiTextureSheetAnimator.Stop();
+            await _uiTextureSheetAnimator.PlayAsync("StartDestroy");
+            await _uiTextureSheetAnimator.PlayAsync("EndDestroy");
         }
 
-        public virtual Tween Show()
+        public void Dispose()
         {
-            return _canvasGroup.DOFade(0, 0.5f);
-        }
-        
-        public virtual Tween Hide()
-        {
-            return _canvasGroup.DOFade(0f, 0.5f);
-        }
-        
-        public virtual void ShowFast()
-        {
-            _canvasGroup.DOKill();
-            _canvasGroup.alpha = 1;
-        }
-        
-        public virtual void HideFast()
-        {
-            _canvasGroup.DOKill();
-            _canvasGroup.alpha = 0;
+            _uiTextureSheetAnimator.Stop();
         }
     }
 }

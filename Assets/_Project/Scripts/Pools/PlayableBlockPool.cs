@@ -45,6 +45,8 @@ namespace _Project.Scripts.Pools
 
         public void Return<T>(T playableBlock) where T : PlayableBlockPresenter
         {
+            if (playableBlock == null) return;
+            
             if (!_availablePlayableBlocks.Contains(playableBlock))
             {
                 _availablePlayableBlocks.Add(playableBlock);

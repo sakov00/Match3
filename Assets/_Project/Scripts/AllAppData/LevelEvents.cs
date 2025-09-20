@@ -23,13 +23,14 @@ namespace _Project.Scripts.AllAppData
             _objectsRegistry
                 .GetTypedList<PlayableBlockPresenter>()
                 .ObserveRemove()
-                .Subscribe(_ => AllBlockDestroyed())
+                .Subscribe(_ => CheckAllBlocksDestroyed())
                 .AddTo(_disposables);
         }
 
-        private void AllBlockDestroyed()
+        private void CheckAllBlocksDestroyed()
         {
-            WinEvent?.Invoke();
+            if(_objectsRegistry.GetTypedList<PlayableBlockPresenter>().Count == 0)
+                WinEvent?.Invoke();
         }
         
         public void Dispose()

@@ -73,7 +73,7 @@ namespace _Project.Scripts._VContainer
             builder.RegisterInstance(_applicationEventsHandler).AsSelf();
             builder.Register<GameTimer>(Lifetime.Singleton).As<GameTimer, ITickable>();
             builder.Register<ResetLevelService>(Lifetime.Singleton).AsSelf();
-            builder.Register<FileLevelManager>(Lifetime.Singleton).AsSelf();
+            builder.Register<FileLevelManager>(Lifetime.Singleton).AsSelf().As<IInitializable>();
         }
         
         public virtual void RegisterGameManager(IContainerBuilder builder)

@@ -1,8 +1,10 @@
 using System;
+using System.Threading;
 using _Project.Scripts._VContainer;
 using _Project.Scripts.Pools;
 using _Project.Scripts.Registries;
 using _Project.Scripts.UI.PlayingObjects.Cell;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using VContainer;
@@ -21,7 +23,13 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
         {
             InjectManager.Inject(this);
             _objectsRegistry.Register(this);
-            View.ShowFast();
+            View.StartIdleAnim().Forget();
+        }
+
+        public async UniTask DestroyAnimStart()
+        {
+            await View.DestroyAnim();
+            ReturnToPool();
         }
 
         public virtual void ReturnToPool()
@@ -32,6 +40,7 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
 
         public virtual void Dispose()
         {
+            View.Dispose();
             _objectsRegistry.Unregister(this);
         }
     }

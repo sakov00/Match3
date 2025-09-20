@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4eabc7d259a4774a39ff24751758e0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canvasGroup: {fileID: 4618014327496611552}
+  _uiTextureSheetAnimator: {fileID: 3366629189572216794}
 --- !u!1 &6741520838388603599
 GameObject:
   m_ObjectHideFlags: 0
@@ -165,7 +165,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _rawImage: {fileID: 6614014628306004350}
-  _columns: 5
-  _rows: 5
-  _totalFrames: 22
-  _loop: 1
+  Animations:
+  - Name: Idle
+    Texture: {fileID: 2800000, guid: 3a80be7a82509ab4c9b415b2da53b71e, type: 3}
+    Columns: 5
+    Rows: 5
+    TotalFrames: 22
+    Loop: 1
+    FPS: 30
+  - Name: StartDestroy
+    Texture: {fileID: 2800000, guid: 98b7cbd0d58508f4ca9435231cfada34, type: 3}
+    Columns: 4
+    Rows: 2
+    TotalFrames: 8
+    Loop: 0
+    FPS: 30
+  - Name: EndDestroy
+    Texture: {fileID: 2800000, guid: fa2535d98f1aef24991dc85c421366e4, type: 3}
+    Columns: 4
+    Rows: 3
+    TotalFrames: 10
+    Loop: 0
+    FPS: 30

@@ -1,10 +1,11 @@
 using _Project.Scripts.AllAppData;
+using _Project.Scripts.Enums;
 using _Project.Scripts.Registries;
 using _Project.Scripts.Services;
-using _Project.Scripts.UI.PlayingObjects;
 using _Project.Scripts.UI.Windows.BaseWindow;
 using _Project.Scripts.UI.Windows.LoadingWindow;
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using UniRx;
 using UnityEngine;
 using VContainer;
@@ -22,10 +23,8 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         [SerializeField] private GameWindowModel _model;
         [SerializeField] private GameWindowView _view;
         [SerializeField] private GameZone _gameZone;
-        
-        protected override BaseWindowModel BaseModel => _model;
-        protected override BaseWindowView BaseView => _view;
 
+        public override WindowType WindowType => _model.WindowType;
         public ReactiveCommand NextLevelCommand { get; } = new();
         public ReactiveCommand RestartLevelCommand { get; } = new();
 
@@ -39,31 +38,31 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         public void Initialize()
         {
             _appData.LevelEvents.WinEvent += WinHandle;
+            _view.Initialize();
             _gameZone.Initialize();
         }
 
         private async UniTaskVoid NextLevel()
         {
-            await WindowsManager.ShowWindow<LoadingWindowPresenter>();
             _appData.User.CurrentLevel += 1;
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
-            await UniTask.Delay(1000);
-            WindowsManager.HideWindow<LoadingWindowPresenter>();
         }
         
         private async UniTaskVoid RestartLevel()
         {
-            await WindowsManager.ShowWindow<LoadingWindowPresenter>();
             _fileLevelManager.RemoveProgress(_appData.User.CurrentLevel);
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
-            await UniTask.Delay(1000);
-            WindowsManager.HideWindow<LoadingWindowPresenter>();
         }
 
-        private async void WinHandle()
+        private void WinHandle()
         {
-
+            NextLevel().Forget();
         }
+        
+        public override Tween Show() => _view.Show();
+        public override Tween Hide() => _view.Hide();
+        public override void ShowFast() => _view.ShowFast();
+        public override void HideFast() => _view.HideFast();
 
         public void Dispose()
         {
