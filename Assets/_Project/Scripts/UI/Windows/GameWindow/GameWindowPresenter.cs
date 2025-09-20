@@ -27,16 +27,14 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         public override WindowType WindowType => _model.WindowType;
         public ReactiveCommand NextLevelCommand { get; } = new();
         public ReactiveCommand RestartLevelCommand { get; } = new();
-
-        protected override void Awake()
-        {
-            base.Awake();
-            NextLevelCommand.Subscribe(_ => NextLevel().Forget()).AddTo(this);
-            RestartLevelCommand.Subscribe(_ => RestartLevel().Forget()).AddTo(this);
-        }
+        
+        private CompositeDisposable _disposables;
 
         public void Initialize()
         {
+            _disposables = new CompositeDisposable();
+            NextLevelCommand.Subscribe(_ => NextLevel().Forget()).AddTo(_disposables);
+            RestartLevelCommand.Subscribe(_ => RestartLevel().Forget()).AddTo(_disposables);
             _appData.LevelEvents.WinEvent += WinHandle;
             _view.Initialize();
             _gameZone.Initialize();
@@ -66,6 +64,7 @@ namespace _Project.Scripts.UI.Windows.GameWindow
 
         public void Dispose()
         {
+            _disposables?.Dispose();
             _appData.LevelEvents.WinEvent -= WinHandle;
             _view.Dispose();
             _gameZone.Dispose();

@@ -71,8 +71,14 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
             var direction = GetDirection(delta);
             var targetCell = GetTargetCell(oldCell, direction);
-            
+
             if (oldCell.PlayableBlockPresenter == null || targetCell == null) return;
+    
+            if (!oldCell.PlayableBlockPresenter.IsInteractable) return;
+    
+            if (targetCell.PlayableBlockPresenter != null && !targetCell.PlayableBlockPresenter.IsInteractable)
+                return;
+
             if (direction == Vector2Int.up && targetCell.PlayableBlockPresenter == null) return;
 
             if (targetCell.PlayableBlockPresenter == null)

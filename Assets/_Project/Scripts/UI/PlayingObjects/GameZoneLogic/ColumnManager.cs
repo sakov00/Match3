@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using _Project.Scripts.Enums;
 using _Project.Scripts.UI.PlayingObjects.Cell;
 using _Project.Scripts.UI.PlayingObjects.Column;
 using Cysharp.Threading.Tasks;
@@ -224,8 +225,9 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                 block.transform.SetParent(lowestEmptyCell.transform, true);
 
                 token.ThrowIfCancellationRequested();
-
+                block.Model.State = BlockState.Falling;
                 await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f);
+                block.Model.State = BlockState.Idle;
                 return true;
             }
             catch (OperationCanceledException)

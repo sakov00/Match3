@@ -9,7 +9,7 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
     {
         [SerializeField] private UITextureSheetAnimator _uiTextureSheetAnimator;
         
-        public virtual async UniTask StartIdleAnim()
+        public virtual async UniTask IdleAnim()
         {
             _uiTextureSheetAnimator.Stop();
             await _uiTextureSheetAnimator.PlayAsync("Idle");

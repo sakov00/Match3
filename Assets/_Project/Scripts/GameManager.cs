@@ -34,9 +34,9 @@ namespace _Project.Scripts
         public virtual async UniTask StartLevel(int levelIndex)
         {
             Dispose();
-            await _windowsManager.ShowWindow<LoadingWindowPresenter>();
             var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
             gameWindow.Dispose();
+            await _windowsManager.ShowWindow<LoadingWindowPresenter>();
             gameWindow.ShowFast();
             AppData.LevelEvents.Dispose();
             AppData.LevelEvents.Initialize();
