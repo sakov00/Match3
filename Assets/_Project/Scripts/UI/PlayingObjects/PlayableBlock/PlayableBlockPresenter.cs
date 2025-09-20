@@ -26,9 +26,9 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
             View.StartIdleAnim().Forget();
         }
 
-        public async UniTask DestroyAnimStart()
+        public async UniTask DestroyAnimStart(CancellationToken token)
         {
-            await View.DestroyAnim();
+            await View.DestroyAnim().AttachExternalCancellation(token);
             ReturnToPool();
         }
 

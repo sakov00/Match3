@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -5,6 +6,7 @@ using _Project.Scripts.UI.PlayingObjects.Cell;
 using _Project.Scripts.UI.PlayingObjects.Column;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
@@ -30,24 +32,28 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         
         public async UniTask ResolveGameZone(CancellationToken token)
         {
-            bool changed;
-            do
+            try
             {
-                changed = false;
-                if (await CheckGameZone())
+                bool changed;
+                do
                 {
-                    changed = true;
-                }
+                    token.ThrowIfCancellationRequested();
 
-                if (await NormalizeGameZone(token))
-                {
-                    changed = true;
-                }
+                    changed = false;
+                    if (await CheckGameZone(token))
+                        changed = true;
 
-            } while (changed);
+                    token.ThrowIfCancellationRequested();
+
+                    if (await NormalizeGameZone(token))
+                        changed = true;
+
+                } while (changed);
+            }
+            catch (OperationCanceledException) { }
         }
 
-        private async UniTask<bool> CheckGameZone()
+        private async UniTask<bool> CheckGameZone(CancellationToken token)
         {
             var width = ActiveColumns.Count;
             var height = ActiveColumns[0].Cells.Count;
@@ -65,6 +71,8 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             {
                 for (var y = 0; y < height; y++)
                 {
+                    token.ThrowIfCancellationRequested();
+                    
                     if (!lineMarks[x, y] || visited[x, y]) continue;
 
                     var connected = new List<(int x, int y)>();
@@ -74,7 +82,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     foreach (var pos in connected)
                     {
                         var cell = ActiveColumns[pos.x].Cells[pos.y];
-                        var task = cell.PlayableBlockPresenter.DestroyAnimStart()
+                        var task = cell.PlayableBlockPresenter.DestroyAnimStart(token)
                             .ContinueWith(() => cell.PlayableBlockPresenter = null);
                         tasks.Add(task);
                     }
@@ -82,7 +90,8 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     removedAny = true;
                 }
             }
-            await UniTask.WhenAll(tasks);
+            token.ThrowIfCancellationRequested();
+            await UniTask.WhenAll(tasks).AttachExternalCancellation(token);
             return removedAny;
         }
 
@@ -191,34 +200,40 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         private async UniTask<bool> DropBlockDown(CellController cell, ColumnController columnController, CancellationToken token)
         {
             var block = cell.PlayableBlockPresenter;
-            var rowIndex = cell.Model.RowIndex;
-            
-            if(rowIndex - 1 < 0) return false;
-
-            CellController lowestEmptyCell = null;
-            for (int row = rowIndex - 1; row >= 0 ; row--)
+            try
             {
-                if (columnController.Cells[row].PlayableBlockPresenter == null)
+                var rowIndex = cell.Model.RowIndex;
+                if (rowIndex - 1 < 0) return false;
+
+                CellController lowestEmptyCell = null;
+                for (var row = rowIndex - 1; row >= 0; row--)
                 {
-                    lowestEmptyCell = columnController.Cells[row];
+                    if (columnController.Cells[row].PlayableBlockPresenter == null)
+                        lowestEmptyCell = columnController.Cells[row];
+                    else
+                        break;
                 }
-                else
-                {
-                    break;
-                }
+
+                if (lowestEmptyCell == null) return false;
+
+                block.transform.DOComplete(true);
+                token.Register(() => block.transform.DOComplete(true));
+
+                cell.PlayableBlockPresenter = null;
+                lowestEmptyCell.PlayableBlockPresenter = block;
+                block.transform.SetParent(lowestEmptyCell.transform, true);
+
+                token.ThrowIfCancellationRequested();
+
+                await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f);
+                return true;
             }
-
-            if (lowestEmptyCell == null) return false;
-            
-            block.transform.DOComplete(true);
-            token.Register(() => block.transform.DOComplete(true));
-
-            cell.PlayableBlockPresenter = null;
-            lowestEmptyCell.PlayableBlockPresenter = block;
-            block.transform.SetParent(lowestEmptyCell.transform, true);
-
-            await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f).Play();
-            return true;
+            catch (OperationCanceledException)
+            {
+                block.transform.position = Vector2.zero;
+                block.transform.localScale = Vector3.zero;
+                return false;
+            }
         }
 
         public void SubscribeToActiveCells(System.Action<PointerEventData, CellController> onBeginDrag,
