@@ -43,10 +43,9 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     
                     token.ThrowIfCancellationRequested();
                     if (await NormalizeGameZone(token)) changed = true;
-
+                    
                     token.ThrowIfCancellationRequested();
                     if (await CheckGameZone(token)) changed = true;
-
                 } while (changed);
             }
             catch (OperationCanceledException) { }
@@ -59,40 +58,30 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             var width = ActiveColumns.Count;
             var height = ActiveColumns[0].Cells.Count;
 
-            var grid = new PlayableBlockPresenter[width, height];
-            for (var x = 0; x < width; x++)
-            {
-                for (var y = 0; y < height; y++)
-                {
-                    grid[x, y] = ActiveColumns[x].Cells[y].PlayableBlockPresenter;
-                }
-            }
+            var grid = BuildGrid(width, height);
 
             bool changed;
 
             do
             {
                 changed = false;
-                for (var x = 0; x < width; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    for (var y = height - 1; y >= 0; y--)
+                    int emptyCount = 0;
+
+                    for (int y = 0; y < height; y++)
                     {
                         var block = grid[x, y];
-                        if (block == null || block.Model.State == BlockState.Destroying ||
-                            block.Model.State == BlockState.PredictDestroy) continue;
 
-                        var targetY = y;
-                        while (targetY - 1 >= 0 &&
-                           (grid[x, targetY - 1] == null ||
-                            grid[x, targetY - 1].Model.State == BlockState.PredictDestroy ||
-                            grid[x, targetY - 1].Model.State == BlockState.Destroying))
+                        if (block == null || block.Model.State == BlockState.Destroying || block.Model.State == BlockState.PredictDestroy)
                         {
-                            targetY--;
+                            emptyCount++;
+                            continue;
                         }
 
-                        if (targetY != y)
+                        if (emptyCount > 0)
                         {
-                            grid[x, targetY] = block;
+                            grid[x, y - emptyCount] = block;
                             grid[x, y] = null;
                             block.Model.State = BlockState.PredictFalling;
                             changed = true;
@@ -121,6 +110,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                             if (b != null && block.Model.State != BlockState.Destroying && b.Model.State != BlockState.PredictDestroy)
                             {
                                 b.Model.State = BlockState.PredictDestroy;
+                                grid[pos.x, pos.y] = null;
                                 changed = true;
                             }
                         }
@@ -283,70 +273,68 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                 }
             }
         }
-
         
         private async UniTask<bool> NormalizeGameZone(CancellationToken token)
         {
-            var moved = false;
-            var tasks = new List<UniTask<bool>>();
+            bool moved = false;
+            var fallTasks = new List<UniTask>();
 
             foreach (var column in ActiveColumns)
             {
-                for (var row = column.Cells.Count - 1; row >= 0; row--)
+                int emptyCount = 0;
+
+                for (int row = 0; row < column.Cells.Count; row++)
                 {
                     var cell = column.Cells[row];
-                    if (cell.PlayableBlockPresenter != null)
+                    var block = cell.PlayableBlockPresenter;
+
+                    if (block == null)
                     {
-                        tasks.Add(DropBlockDown(cell, column, token));
+                        emptyCount++;
+                        continue;
+                    }
+
+                    if (block.Model.State == BlockState.Destroying)
+                        continue;
+
+                    if (emptyCount > 0)
+                    {
+                        var targetCell = column.Cells[row - emptyCount];
+                        
+                        cell.PlayableBlockPresenter = null;
+                        targetCell.PlayableBlockPresenter = block;
+                        block.transform.SetParent(targetCell.transform, true);
+                        block.Model.State = BlockState.Falling;
+
+                        fallTasks.Add(MoveBlockAnim(block, targetCell, token));
+                        moved = true;
                     }
                 }
             }
 
-            if (tasks.Count <= 0) return moved;
-            
-            var results = await UniTask.WhenAll(tasks);
-            moved = results.Any(r => r);
-            MarkFullPrediction();
+            if (fallTasks.Count > 0)
+                await UniTask.WhenAll(fallTasks).AttachExternalCancellation(token);
+
+            foreach (var column in ActiveColumns)
+            {
+                foreach (var cell in column.Cells)
+                {
+                    var block = cell.PlayableBlockPresenter;
+                    if (block != null && block.Model.State == BlockState.Falling)
+                        block.Model.State = BlockState.Idle;
+                }
+            }
+
             return moved;
         }
-        
-        private async UniTask<bool> DropBlockDown(CellController cell, ColumnController columnController, CancellationToken token)
+
+        private async UniTask MoveBlockAnim(PlayableBlockPresenter block, CellController targetCell, CancellationToken token)
         {
-            var block = cell.PlayableBlockPresenter;
-            try
-            {
-                var rowIndex = cell.Model.RowIndex;
-                if (rowIndex - 1 < 0) return false;
+            block.transform.DOComplete(true);
+            token.Register(() => block.transform.DOComplete(true));
 
-                CellController lowestEmptyCell = null;
-                for (var row = rowIndex - 1; row >= 0; row--)
-                {
-                    if (columnController.Cells[row].PlayableBlockPresenter == null)
-                        lowestEmptyCell = columnController.Cells[row];
-                    else
-                        break;
-                }
-
-                if (lowestEmptyCell == null) return false;
-
-                block.transform.DOComplete(true);
-                token.Register(() => block.transform.DOComplete(true));
-
-                cell.PlayableBlockPresenter = null;
-                lowestEmptyCell.PlayableBlockPresenter = block;
-                block.transform.SetParent(lowestEmptyCell.transform, true);
-                block.Model.State = BlockState.Falling;
-                
-                token.ThrowIfCancellationRequested();
-                await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f);
-                lowestEmptyCell.PlayableBlockPresenter.Model.State = BlockState.Idle;
-                
-                return true;
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
+            token.ThrowIfCancellationRequested();
+            await block.transform.DOMove(targetCell.transform.position, 0.25f);
         }
 
         public void SubscribeToActiveCells(Action<PointerEventData, CellController> onBeginDrag,
