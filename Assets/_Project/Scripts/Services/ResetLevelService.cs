@@ -12,11 +12,11 @@ namespace _Project.Scripts.Services
         
         public void ResetLevel()
         {
-            var disposeList = _objectsRegistry.GetAllByInterface<IDisposable>();
-            disposeList.ForEach(obj => obj.Dispose());
-            
             var returnToPoolList = _objectsRegistry.GetAllByInterface<IReturnToPool>();
             returnToPoolList.ForEach(obj => obj.ReturnToPool());
+            
+            var disposeList = _objectsRegistry.GetAllByInterface<IDisposable>();
+            disposeList.ForEach(obj => obj.Dispose());
             
             _objectsRegistry.GetTypedList<PlayableBlockPresenter>().Clear();
         }

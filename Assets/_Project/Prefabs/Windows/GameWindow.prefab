@@ -731,7 +731,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 1
-      value: 1
+      value: 1.1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -1862,7 +1862,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 1
-      value: 1
+      value: 1.1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -2404,7 +2404,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 1
-      value: 1
+      value: 1.1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -2577,7 +2577,7 @@ MonoBehaviour:
   - {fileID: 9106014827575806269}
   - {fileID: 4228047693359174034}
   _maxAnimatedBalloons: 3
-  _randomDelay: {x: 3, y: 5}
+  _randomDelay: {x: 2, y: 4}
 --- !u!225 &5061125597974301615
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -3387,7 +3387,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 1
-      value: 1
+      value: 1.1
       inSlope: 0
       outSlope: 0
       tangentMode: 0

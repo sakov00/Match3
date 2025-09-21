@@ -31,7 +31,7 @@ namespace _Project.Scripts
             Input.multiTouchEnabled = false;
             var loadingWindow = _windowsManager.GetWindow<LoadingWindowPresenter>();
             loadingWindow.ShowFast();
-            var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
+            _windowsManager.GetWindow<GameWindowPresenter>();
             await _fileLevelManager.Initialize();
             await StartLevel(AppData.User.CurrentLevel);
             await _windowsManager.HideWindow<LoadingWindowPresenter>();

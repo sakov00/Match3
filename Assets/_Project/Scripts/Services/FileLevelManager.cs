@@ -23,19 +23,18 @@ namespace _Project.Scripts.Services
         [Inject] private PlayableBlockPool _playableBlockPool;
         
         public int TotalLevels { get; private set; }
-        
-        private static string GetDefaultSavePath(int index) 
-            => Path.Combine(Application.streamingAssetsPath, $"level_{index}.dat");
-        private static string GetProgressSavePath(int index) 
-            => Path.Combine(Application.persistentDataPath, $"level_progress_{index}.dat");
-        
+
+        private static string GetDefaultSavePath(int index) =>
+            Path.Combine(Application.streamingAssetsPath, $"level_{index}.dat");
+
+        private static string GetProgressSavePath(int index) =>
+            Path.Combine(Application.persistentDataPath, $"level_progress_{index}.dat");
+
         public async UniTask Initialize()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            Debug.Log("CountLevelsAndroid");
             TotalLevels = await CountLevelsAndroid();
 #else
-            Debug.Log("CountLevelsPC");
             TotalLevels = CountLevelsPC();
 #endif
             Debug.Log($"Total levels found: {TotalLevels}");
@@ -43,43 +42,33 @@ namespace _Project.Scripts.Services
 
         private int CountLevelsPC()
         {
-            var files = Directory.GetFiles(Application.streamingAssetsPath, "level_*.dat");
-            return files.Length;
+            return Directory.GetFiles(Application.streamingAssetsPath, "level_*.dat").Length;
         }
 
         private async UniTask<int> CountLevelsAndroid()
         {
-            int count = 0;
-
+            var count = 0;
             while (true)
             {
                 try
                 {
-                    var path = Path.Combine(Application.streamingAssetsPath, $"level_{count}.dat");
-                    Debug.Log(path);
+                    var path = GetDefaultSavePath(count);
                     using var request = UnityWebRequest.Get(path);
                     await request.SendWebRequest();
-                    
                     if (request.result != UnityWebRequest.Result.Success)
-                    {
                         break;
-                    }
-                    
                     count++;
                 }
-                catch (Exception)
-                {
-                    break;
-                }
+                catch (Exception) { break; }
             }
-
             return count;
         }
 
-        public async UniTask SaveLevelDefault(int index) => await Save(GetDefaultSavePath(index));
-        public async UniTask LoadLevelDefault(int index) => await LoadFromStreamingAssets(GetDefaultSavePath(index));
-        public async UniTask SaveLevelProgress(int index) => await Save(GetProgressSavePath(index));
-        public async UniTask LoadLevelProgress(int index) => await LoadFromPersistentPath(GetProgressSavePath(index));
+        public UniTask SaveLevelDefault(int index) => Save(GetDefaultSavePath(index));
+        public UniTask SaveLevelProgress(int index) => Save(GetProgressSavePath(index));
+
+        public UniTask LoadLevelDefault(int index) => LoadFromStreamingAssets(GetDefaultSavePath(index));
+        public UniTask LoadLevelProgress(int index) => LoadFromPersistentPath(GetProgressSavePath(index));
 
         public async UniTask LoadLevel(int fakeIndex)
         {
@@ -88,35 +77,40 @@ namespace _Project.Scripts.Services
                 Debug.LogError("No levels found! Cannot load level.");
                 return;
             }
-            
-            var realIndex = fakeIndex % TotalLevels;
 
-            if (File.Exists(GetProgressSavePath(fakeIndex)))
+            var realIndex = fakeIndex % TotalLevels;
+            var progressPath = GetProgressSavePath(fakeIndex);
+
+            if (File.Exists(progressPath))
                 await LoadLevelProgress(fakeIndex);
             else
                 await LoadLevelDefault(realIndex);
-            
+
             Debug.Log($"Loaded level {realIndex}");
-        } 
+        }
 
         public void RemoveProgress(int fakeIndex)
         {
-            if (File.Exists(GetProgressSavePath(fakeIndex)))
-                File.Delete(GetProgressSavePath(fakeIndex));
+            var path = GetProgressSavePath(fakeIndex);
+            if (File.Exists(path))
+                File.Delete(path);
         }
 
         private async UniTask Save(string path)
         {
-            var allColumns = _objectsRegistry.GetTypedList<ColumnController>();
-            var allCells = _objectsRegistry.GetTypedList<CellController>();
-            var levelModel = new LevelModel();
-            levelModel.ColumnModels.AddRange(allColumns.Select(o => o.GetSavableModel()).ToList());
-            levelModel.CellModels.AddRange(allCells.Select(o => o.GetSavableModel()).ToList());
+            var columns = _objectsRegistry.GetTypedList<ColumnController>();
+            var cells = _objectsRegistry.GetTypedList<CellController>();
+
+            var levelModel = new LevelModel
+            {
+                ColumnModels = columns.Select(c => c.GetSavableModel()).ToList(),
+                CellModels = cells.Select(c => c.GetSavableModel()).ToList()
+            };
 
             var data = MemoryPackSerializer.Serialize(levelModel);
             var compressed = LZ4Pickler.Pickle(data);
-            await File.WriteAllBytesAsync(path, compressed);
 
+            await File.WriteAllBytesAsync(path, compressed);
             Debug.Log($"Level saved to {path}");
         }
 
@@ -128,59 +122,58 @@ namespace _Project.Scripts.Services
                 return;
             }
 
-            byte[] bytes = await File.ReadAllBytesAsync(path);
-       
-
-            var data = LZ4Pickler.Unpickle(bytes);
-            var levelModel = MemoryPackSerializer.Deserialize<LevelModel>(data);
+            var bytes = await File.ReadAllBytesAsync(path);
+            var levelModel = Deserialize(bytes);
 
             await InstantiateLoadedObjects(levelModel);
         }
-        
+
         private async UniTask LoadFromStreamingAssets(string path)
         {
-            byte[] bytes;
-            using (var request = UnityWebRequest.Get(path))
+            using var request = UnityWebRequest.Get(path);
+            await request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
             {
-                await request.SendWebRequest();
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.LogWarning($"Failed to load level at {path}: {request.error}");
-                    return;
-                }
-                bytes = request.downloadHandler.data;
+                Debug.LogWarning($"Failed to load level at {path}: {request.error}");
+                return;
             }
 
-            var data = LZ4Pickler.Unpickle(bytes);
-            var levelModel = MemoryPackSerializer.Deserialize<LevelModel>(data);
-            
-
+            var levelModel = Deserialize(request.downloadHandler.data);
             await InstantiateLoadedObjects(levelModel);
         }
 
-        private async UniTask InstantiateLoadedObjects(LevelModel levelModel)
+        private static LevelModel Deserialize(byte[] bytes)
         {
+            var data = LZ4Pickler.Unpickle(bytes);
+            return MemoryPackSerializer.Deserialize<LevelModel>(data);
+        }
+
+        private async UniTask InstantiateLoadedObjects(LevelModel? levelModel)
+        {
+            if (levelModel == null) return;
+
             var allColumns = _objectsRegistry.GetTypedList<ColumnController>();
             var allCells = _objectsRegistry.GetTypedList<CellController>();
             var tasks = new List<UniTask>();
-            
+
             foreach (var model in levelModel.ColumnModels)
             {
-                var needColumn = allColumns.First(x => x.Model.ColumnIndex == model.ColumnIndex);
-                needColumn.SetSavableModel(model);
+                var column = allColumns.First(c => c.Model.ColumnIndex == model.ColumnIndex);
+                column.SetSavableModel(model);
             }
 
             foreach (var model in levelModel.CellModels)
             {
                 if (model?.PlayableBlockModel == null) continue;
 
-                var needCell = allCells.First(x => x.Model.ColumnIndex == model.ColumnIndex && x.Model.RowIndex == model.RowIndex);
-
-                var task = _playableBlockPool.Get<PlayableBlockPresenter>(needCell.transform, model.PlayableBlockModel.GroupId)
+                var cell = allCells.First(c => c.Model.ColumnIndex == model.ColumnIndex && c.Model.RowIndex == model.RowIndex);
+                var task = _playableBlockPool
+                    .Get<PlayableBlockPresenter>(cell.transform, model.PlayableBlockModel.GroupId)
                     .ContinueWith(blockPresenter =>
                     {
-                        needCell.SetSavableModel(model);
-                        needCell.PlayableBlockPresenter = blockPresenter;
+                        cell.SetSavableModel(model);
+                        cell.PlayableBlockPresenter = blockPresenter;
                     });
 
                 tasks.Add(task);

@@ -65,7 +65,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             _dragStartPos = eventData.position;
         }
 
-        private async void OnEndDrag(PointerEventData eventData, CellController oldCell)
+        private void OnEndDrag(PointerEventData eventData, CellController oldCell)
         {
             var delta = eventData.position - _dragStartPos;
             if (delta.magnitude < 20f) return;
@@ -105,8 +105,8 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
         private CellController GetTargetCell(CellController oldCell, Vector2Int direction)
         {
-            int newColumnIndex = oldCell.Model.ColumnIndex + direction.x;
-            int newRowIndex = oldCell.Model.RowIndex + direction.y;
+            var newColumnIndex = oldCell.Model.ColumnIndex + direction.x;
+            var newRowIndex = oldCell.Model.RowIndex + direction.y;
 
             if (newColumnIndex < 0 || newColumnIndex >= _columnManager.ActiveColumns.Count)
                 return null;

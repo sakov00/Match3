@@ -39,16 +39,13 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                 bool changed;
                 do
                 {
-                    token.ThrowIfCancellationRequested();
-                    
                     changed = false;
-                    if (await NormalizeGameZone(token))
-                        changed = true;
+                    
+                    token.ThrowIfCancellationRequested();
+                    if (await NormalizeGameZone(token)) changed = true;
 
                     token.ThrowIfCancellationRequested();
-
-                    if (await CheckGameZone(token))
-                        changed = true;
+                    if (await CheckGameZone(token)) changed = true;
 
                 } while (changed);
             }
@@ -59,20 +56,23 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         {
             if (ActiveColumns.Count == 0) return;
 
-            int width = ActiveColumns.Count;
-            int height = ActiveColumns[0].Cells.Count;
+            var width = ActiveColumns.Count;
+            var height = ActiveColumns[0].Cells.Count;
 
             var grid = new PlayableBlockPresenter[width, height];
-            for (int x = 0; x < width; x++)
-                for (int y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
+            {
+                for (var y = 0; y < height; y++)
+                {
                     grid[x, y] = ActiveColumns[x].Cells[y].PlayableBlockPresenter;
+                }
+            }
 
             bool changed;
 
             do
             {
                 changed = false;
-
                 for (var x = 0; x < width; x++)
                 {
                     for (var y = height - 1; y >= 0; y--)
@@ -83,9 +83,9 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
                         var targetY = y;
                         while (targetY - 1 >= 0 &&
-                               (grid[x, targetY - 1] == null ||
-                                grid[x, targetY - 1].Model.State == BlockState.PredictDestroy ||
-                                grid[x, targetY - 1].Model.State == BlockState.Destroying))
+                           (grid[x, targetY - 1] == null ||
+                            grid[x, targetY - 1].Model.State == BlockState.PredictDestroy ||
+                            grid[x, targetY - 1].Model.State == BlockState.Destroying))
                         {
                             targetY--;
                         }
@@ -100,13 +100,13 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     }
                 }
 
-                bool[,] lineMarks = new bool[width, height];
+                var lineMarks = new bool[width, height];
                 MarkHorizontalLines(grid, lineMarks, width, height);
                 MarkVerticalLines(grid, lineMarks, width, height);
 
-                for (int x = 0; x < width; x++)
+                for (var x = 0; x < width; x++)
                 {
-                    for (int y = 0; y < height; y++)
+                    for (var y = 0; y < height; y++)
                     {
                         var block = grid[x, y];
                         if (block == null || !lineMarks[x, y] || block.Model.State == BlockState.Destroying ||
@@ -217,10 +217,10 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
         private void MarkHorizontalLines(PlayableBlockPresenter[,] grid, bool[,] lineMarks, int width, int height)
         {
-            for (int y = 0; y < height; y++)
+            for (var y = 0; y < height; y++)
             {
-                int count = 1;
-                for (int x = 1; x < width; x++)
+                var count = 1;
+                for (var x = 1; x < width; x++)
                 {
                     var current = grid[x, y];
                     var previous = grid[x - 1, y];
@@ -240,10 +240,11 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     else
                         count = 1;
 
-                    if (count >= 3)
+                    if (count < 3) continue;
+                    
+                    for (var k = 0; k < count; k++)
                     {
-                        for (int k = 0; k < count; k++)
-                            lineMarks[x - k, y] = true;
+                        lineMarks[x - k, y] = true;
                     }
                 }
             }
@@ -251,10 +252,10 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
         private void MarkVerticalLines(PlayableBlockPresenter[,] grid, bool[,] lineMarks, int width, int height)
         {
-            for (int x = 0; x < width; x++)
+            for (var x = 0; x < width; x++)
             {
-                int count = 1;
-                for (int y = 1; y < height; y++)
+                var count = 1;
+                for (var y = 1; y < height; y++)
                 {
                     var current = grid[x, y];
                     var previous = grid[x, y - 1];
@@ -274,10 +275,10 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     else
                         count = 1;
 
-                    if (count >= 3)
+                    if (count < 3) continue;
+                    for (var k = 0; k < count; k++)
                     {
-                        for (int k = 0; k < count; k++)
-                            lineMarks[x, y - k] = true;
+                        lineMarks[x, y - k] = true;
                     }
                 }
             }
@@ -305,7 +306,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             
             var results = await UniTask.WhenAll(tasks);
             moved = results.Any(r => r);
-
+            MarkFullPrediction();
             return moved;
         }
         
@@ -339,13 +340,11 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                 token.ThrowIfCancellationRequested();
                 await block.transform.DOMove(lowestEmptyCell.transform.position, 0.25f);
                 lowestEmptyCell.PlayableBlockPresenter.Model.State = BlockState.Idle;
-                MarkFullPrediction();
+                
                 return true;
             }
             catch (OperationCanceledException)
             {
-                block.transform.position = Vector2.zero;
-                block.transform.localScale = Vector3.zero;
                 return false;
             }
         }
