@@ -12,12 +12,13 @@ using Cysharp.Threading.Tasks;
 using K4os.Compression.LZ4;
 using MemoryPack;
 using UnityEngine;
+using UnityEngine.Networking;
 using VContainer;
 using VContainer.Unity;
 
 namespace _Project.Scripts.Services
 {
-    public class FileLevelManager : IInitializable
+    public class FileLevelManager
     {
         [Inject] private ObjectsRegistry _objectsRegistry;
         [Inject] private PlayableBlockPool _playableBlockPool;
@@ -29,53 +30,75 @@ namespace _Project.Scripts.Services
         private static string GetProgressSavePath(int index) 
             => Path.Combine(Application.persistentDataPath, $"level_progress_{index}.dat");
         
-
-        public void Initialize()
+        public async UniTask Initialize()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            TotalLevels = CountLevelsAndroid();
+            Debug.Log("CountLevelsAndroid");
+            TotalLevels = await CountLevelsAndroid();
 #else
-            TotalLevels = Directory.GetFiles(Application.streamingAssetsPath, "level_*.dat").Length;
+            Debug.Log("CountLevelsPC");
+            TotalLevels = CountLevelsPC();
 #endif
             Debug.Log($"Total levels found: {TotalLevels}");
         }
-        
-#if UNITY_ANDROID && !UNITY_EDITOR
-        private int CountLevelsAndroid()
+
+        private int CountLevelsPC()
         {
-            var count = 0;
+            var files = Directory.GetFiles(Application.streamingAssetsPath, "level_*.dat");
+            return files.Length;
+        }
+
+        private async UniTask<int> CountLevelsAndroid()
+        {
+            int count = 0;
+
             while (true)
             {
-                var path = Path.Combine(Application.streamingAssetsPath, $"level_{count}.dat");
-                if (!FileExistsAndroid(path)) break;
-                count++;
+                try
+                {
+                    var path = Path.Combine(Application.streamingAssetsPath, $"level_{count}.dat");
+                    Debug.Log(path);
+                    using var request = UnityWebRequest.Get(path);
+                    await request.SendWebRequest();
+                    
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        break;
+                    }
+                    
+                    count++;
+                }
+                catch (Exception)
+                {
+                    break;
+                }
             }
+
             return count;
         }
 
-        private bool FileExistsAndroid(string path)
-        {
-            using var request = UnityWebRequest.Head(path);
-            var op = request.SendWebRequest();
-            while (!op.isDone) { }
-            return request.result != UnityWebRequest.Result.ConnectionError && request.result != UnityWebRequest.Result.ProtocolError;
-        }
-#endif
-
         public async UniTask SaveLevelDefault(int index) => await Save(GetDefaultSavePath(index));
-        public async UniTask LoadLevelDefault(int index) => await Load(GetDefaultSavePath(index));
+        public async UniTask LoadLevelDefault(int index) => await LoadFromStreamingAssets(GetDefaultSavePath(index));
         public async UniTask SaveLevelProgress(int index) => await Save(GetProgressSavePath(index));
-        public async UniTask LoadLevelProgress(int index) => await Load(GetProgressSavePath(index));
+        public async UniTask LoadLevelProgress(int index) => await LoadFromPersistentPath(GetProgressSavePath(index));
 
         public async UniTask LoadLevel(int fakeIndex)
         {
+            if (TotalLevels == 0)
+            {
+                Debug.LogError("No levels found! Cannot load level.");
+                return;
+            }
+            
             var realIndex = fakeIndex % TotalLevels;
 
             if (File.Exists(GetProgressSavePath(fakeIndex)))
                 await LoadLevelProgress(fakeIndex);
             else
                 await LoadLevelDefault(realIndex);
-        }
+            
+            Debug.Log($"Loaded level {realIndex}");
+        } 
 
         public void RemoveProgress(int fakeIndex)
         {
@@ -98,10 +121,26 @@ namespace _Project.Scripts.Services
             Debug.Log($"Level saved to {path}");
         }
 
-        private async UniTask Load(string path)
+        private async UniTask LoadFromPersistentPath(string path)
+        {
+            if (!File.Exists(path))
+            {
+                Debug.LogWarning("Save file not found!");
+                return;
+            }
+
+            byte[] bytes = await File.ReadAllBytesAsync(path);
+       
+
+            var data = LZ4Pickler.Unpickle(bytes);
+            var levelModel = MemoryPackSerializer.Deserialize<LevelModel>(data);
+
+            await InstantiateLoadedObjects(levelModel);
+        }
+        
+        private async UniTask LoadFromStreamingAssets(string path)
         {
             byte[] bytes;
-            #if UNITY_ANDROID && !UNITY_EDITOR
             using (var request = UnityWebRequest.Get(path))
             {
                 await request.SendWebRequest();
@@ -112,21 +151,10 @@ namespace _Project.Scripts.Services
                 }
                 bytes = request.downloadHandler.data;
             }
-            #else
-            if (!File.Exists(path))
-            {
-                Debug.LogWarning("Save file not found!");
-                return;
-            }
-
-            bytes = await File.ReadAllBytesAsync(path);
-            #endif
 
             var data = LZ4Pickler.Unpickle(bytes);
             var levelModel = MemoryPackSerializer.Deserialize<LevelModel>(data);
             
-            Debug.Log($"Loaded {levelModel.ColumnModels.Count} objects.");
-            Debug.Log($"Loaded {levelModel.CellModels.Count} objects.");
 
             await InstantiateLoadedObjects(levelModel);
         }

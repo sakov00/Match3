@@ -1,3 +1,4 @@
+using System;
 using _Project.Scripts.AllAppData;
 using _Project.Scripts.Enums;
 using _Project.Scripts.Registries;
@@ -19,6 +20,7 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         [Inject] private FileLevelManager _fileLevelManager;
         [Inject] private ObjectsRegistry _objectsRegistry;
         [Inject] private GameManager _gameManager;
+        [Inject] private WindowsManager _windowsManager;
         
         [SerializeField] private GameWindowModel _model;
         [SerializeField] private GameWindowView _view;
@@ -43,13 +45,19 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         private async UniTaskVoid NextLevel()
         {
             _appData.User.CurrentLevel += 1;
+            _windowsManager.ShowWindow<LoadingWindowPresenter>();
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
+            await _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
         
         private async UniTaskVoid RestartLevel()
         {
             _fileLevelManager.RemoveProgress(_appData.User.CurrentLevel);
+            _windowsManager.ShowWindow<LoadingWindowPresenter>();
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
+            await _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
 
         private void WinHandle()

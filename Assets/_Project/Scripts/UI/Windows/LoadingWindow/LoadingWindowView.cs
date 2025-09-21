@@ -28,5 +28,17 @@ namespace _Project.Scripts.UI.Windows.LoadingWindow
             sequenceHide.Append(base.Hide());
             return sequenceHide;
         }
+        
+        public override void ShowFast()
+        {
+            base.ShowFast();
+            _rotateUIAroundPoint.StartRotation();
+        }
+
+        public override void HideFast()
+        {
+            base.HideFast();
+            _rotateUIAroundPoint.StopRotation();
+        }
     }
 }

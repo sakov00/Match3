@@ -15,7 +15,7 @@ using VContainer.Unity;
 
 namespace _Project.Scripts
 {
-    public class GameManager : IInitializable, IDisposable
+    public class GameManager : IAsyncStartable, IDisposable
     {
         [Inject] protected AppData AppData;
         [Inject] private WindowsManager _windowsManager;
@@ -23,12 +23,18 @@ namespace _Project.Scripts
         [Inject] private FileLevelManager _fileLevelManager;
         [Inject] private PlayableBlockPool _playableBlockPool;
         [Inject] private ApplicationEventsHandler _applicationEventsHandler;
-        
-        public virtual void Initialize()
+        private IAsyncStartable _asyncStartableImplementation;
+
+        public virtual async UniTask StartAsync(CancellationToken cancellation = default)
         {
             Application.targetFrameRate = 60;
             Input.multiTouchEnabled = false;
-            StartLevel(AppData.User.CurrentLevel).Forget();
+            var loadingWindow = _windowsManager.GetWindow<LoadingWindowPresenter>();
+            loadingWindow.ShowFast();
+            await _fileLevelManager.Initialize();
+            await StartLevel(AppData.User.CurrentLevel);
+            await UniTask.Delay(TimeSpan.FromSeconds(1));
+            await _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
 
         public virtual async UniTask StartLevel(int levelIndex)
@@ -36,7 +42,6 @@ namespace _Project.Scripts
             Dispose();
             var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
             gameWindow.Dispose();
-            await _windowsManager.ShowWindow<LoadingWindowPresenter>();
             gameWindow.ShowFast();
             AppData.LevelEvents.Dispose();
             AppData.LevelEvents.Initialize();
@@ -46,7 +51,6 @@ namespace _Project.Scripts
             _windowsManager.GetWindow<GameWindowPresenter>().Initialize();
             _applicationEventsHandler.OnApplicationQuited += OnApplicationQuit;
             _applicationEventsHandler.OnApplicationPaused += OnApplicationPause;
-            _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
         
         private void OnApplicationQuit()

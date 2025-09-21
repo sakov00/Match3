@@ -20,12 +20,14 @@ namespace _Project.Scripts.UI.Rendering
             get => _bottomColor;
             set { _bottomColor = value; Refresh(); }
         }
-
+        
+#if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
             Refresh();
         }
+#endif
 
         private void Refresh()
         {
