@@ -14,7 +14,6 @@ using MemoryPack;
 using UnityEngine;
 using UnityEngine.Networking;
 using VContainer;
-using VContainer.Unity;
 
 namespace _Project.Scripts.Services
 {
@@ -185,10 +184,10 @@ namespace _Project.Scripts.Services
                     });
 
                 tasks.Add(task);
+                await UniTask.Yield();
             }
 
             await UniTask.WhenAll(tasks);
-            await UniTask.Yield();
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using _Project.Scripts._VContainer;
 using _Project.Scripts.Enums;
+using _Project.Scripts.Interfaces;
 using _Project.Scripts.Pools;
 using _Project.Scripts.Registries;
 using _Project.Scripts.UI.PlayingObjects.Cell;
@@ -12,7 +13,7 @@ using VContainer;
 
 namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
 {
-    public class PlayableBlockPresenter : MonoBehaviour
+    public class PlayableBlockPresenter : MonoBehaviour, IReturnToPool, IDisposable
     {
         [Inject] private ObjectsRegistry _objectsRegistry;
         [Inject] private PlayableBlockPool _playableBlockPool;
@@ -35,7 +36,6 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
             Model.State = BlockState.Destroying;
             await View.DestroyAnim().AttachExternalCancellation(token);
             ReturnToPool();
-            Model.State = BlockState.Idle;
         }
 
         public virtual void ReturnToPool()

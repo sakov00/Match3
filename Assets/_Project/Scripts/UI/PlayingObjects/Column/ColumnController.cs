@@ -8,7 +8,7 @@ using VContainer;
 
 namespace _Project.Scripts.UI.PlayingObjects.Column
 {
-    public class ColumnController : MonoBehaviour
+    public class ColumnController : MonoBehaviour, IDisposable
     {
         [Inject] private ObjectsRegistry _objectsRegistry;
         [field:SerializeField] public RectTransform RectTransform { get; private set; }
@@ -23,7 +23,13 @@ namespace _Project.Scripts.UI.PlayingObjects.Column
         private void Awake()
         {
             InjectManager.Inject(this);
+            Initialize();
+        }
+
+        public void Initialize()
+        {
             _objectsRegistry.Register(this);
+            Cells.ForEach(x => x.Initialize());
         }
         
         public virtual ColumnModel GetSavableModel()
@@ -34,6 +40,11 @@ namespace _Project.Scripts.UI.PlayingObjects.Column
         public virtual void SetSavableModel(ColumnModel savableModel)
         {
             Model = savableModel;
+        }
+        
+        public void Dispose()
+        {   
+            Cells.ForEach(x => x.Dispose());
         }
     }
 }

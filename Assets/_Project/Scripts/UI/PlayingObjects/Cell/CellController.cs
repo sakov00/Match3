@@ -9,7 +9,7 @@ using VContainer;
 
 namespace _Project.Scripts.UI.PlayingObjects.Cell
 {
-    public class CellController : MonoBehaviour, IPointerDownHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
+    public class CellController : MonoBehaviour, IPointerDownHandler, IDragHandler, IBeginDragHandler, IEndDragHandler, IDisposable
     {
         [Inject] private ObjectsRegistry _objectsRegistry;
         [field:SerializeField] public CellModel Model { get; private set; }
@@ -35,6 +35,11 @@ namespace _Project.Scripts.UI.PlayingObjects.Cell
         private void Awake()
         {
             InjectManager.Inject(this);
+            Initialize();
+        }
+        
+        public void Initialize()
+        {
             _objectsRegistry.Register(this);
         }
         

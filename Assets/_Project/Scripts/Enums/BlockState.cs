@@ -4,6 +4,8 @@ namespace _Project.Scripts.Enums
     {
         Idle,
         Falling,
-        Destroying
+        Destroying,
+        PredictFalling,
+        PredictDestroy,
     }
 }

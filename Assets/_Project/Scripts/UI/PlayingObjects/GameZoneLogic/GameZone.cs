@@ -39,6 +39,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         public void Initialize()
         {
             _cts = new CancellationTokenSource();
+            _allColumns.ForEach(x => x.Initialize());
             _columnManager.SeparateColumns();
             _columnManager.SubscribeToActiveCells(OnBeginDrag, OnEndDrag);
             CenterActiveColumns();
@@ -80,18 +81,18 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                 return;
 
             if (direction == Vector2Int.up && targetCell.PlayableBlockPresenter == null) return;
-
+            
             if (targetCell.PlayableBlockPresenter == null)
             {
-                await _playerBlockMover.MoveToEmptyCell(oldCell, targetCell, direction, _cts.Token);
-                await _columnManager.NormalizeGameZone(_cts.Token);
+                _ = _playerBlockMover.MoveToEmptyCell(oldCell, targetCell, direction, _cts.Token)
+                    .ContinueWith(() => _columnManager.ResolveGameZone(_cts.Token));
             }
             else
             {
-                await _playerBlockMover.SwapBlocks(oldCell, targetCell, direction, _cts.Token);
+                _ = _playerBlockMover.SwapBlocks(oldCell, targetCell, direction, _cts.Token)
+                    .ContinueWith(() => _columnManager.ResolveGameZone(_cts.Token));
             }
-
-            await _columnManager.ResolveGameZone(_cts.Token);
+            _columnManager.MarkFullPrediction();
         }
         
         private Vector2Int GetDirection(Vector2 delta)
@@ -122,6 +123,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             _cts?.Cancel();
             _cts?.Dispose();
             _columnManager.UnsubscribeFromAllCells(OnBeginDrag, OnEndDrag);
+            _allColumns.ForEach(x => x.Dispose());
         }
     }
 }

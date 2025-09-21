@@ -31,18 +31,15 @@ namespace _Project.Scripts
             Input.multiTouchEnabled = false;
             var loadingWindow = _windowsManager.GetWindow<LoadingWindowPresenter>();
             loadingWindow.ShowFast();
+            var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
             await _fileLevelManager.Initialize();
             await StartLevel(AppData.User.CurrentLevel);
-            await UniTask.Delay(TimeSpan.FromSeconds(1));
             await _windowsManager.HideWindow<LoadingWindowPresenter>();
         }
 
         public virtual async UniTask StartLevel(int levelIndex)
         {
             Dispose();
-            var gameWindow = _windowsManager.GetWindow<GameWindowPresenter>();
-            gameWindow.Dispose();
-            gameWindow.ShowFast();
             AppData.LevelEvents.Dispose();
             AppData.LevelEvents.Initialize();
             AppData.User.CurrentLevel = levelIndex;

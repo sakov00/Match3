@@ -44,8 +44,10 @@ namespace _Project.Scripts.UI.Windows.GameWindow
 
         private async UniTaskVoid NextLevel()
         {
+            Dispose();
             _appData.User.CurrentLevel += 1;
-            _windowsManager.ShowWindow<LoadingWindowPresenter>();
+            await _windowsManager.ShowWindow<LoadingWindowPresenter>();
+            _view.Dispose();
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
             await _windowsManager.HideWindow<LoadingWindowPresenter>();
@@ -53,8 +55,10 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         
         private async UniTaskVoid RestartLevel()
         {
+            Dispose();
             _fileLevelManager.RemoveProgress(_appData.User.CurrentLevel);
-            _windowsManager.ShowWindow<LoadingWindowPresenter>();
+            await _windowsManager.ShowWindow<LoadingWindowPresenter>();
+            _view.Dispose();
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
             await _windowsManager.HideWindow<LoadingWindowPresenter>();
@@ -74,7 +78,6 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         {
             _disposables?.Dispose();
             _appData.LevelEvents.WinEvent -= WinHandle;
-            _view.Dispose();
             _gameZone.Dispose();
         }
     }
