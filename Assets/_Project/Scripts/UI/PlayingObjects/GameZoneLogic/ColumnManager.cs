@@ -46,7 +46,17 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     
                     token.ThrowIfCancellationRequested();
                     if (await CheckGameZone(token)) changed = true;
+
                 } while (changed);
+                foreach (var column in ActiveColumns)
+                {
+                    foreach (var cell in column.Cells)
+                    {
+                        var block = cell.PlayableBlockPresenter;
+                        if (block != null && block.Model.State == BlockState.Falling)
+                            block.Model.State = BlockState.Idle;
+                    }
+                }
             }
             catch (OperationCanceledException) { }
         }
@@ -178,7 +188,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                 var current = grid[cx, cy];
 
                 if (visited[cx, cy] || current == null || current.Model.GroupId != block.Model.GroupId
-                    || current.Model.State == BlockState.Falling || current.Model.State == BlockState.Destroying)
+                    || current.Model.State == BlockState.Destroying)
                     continue;
 
                 visited[cx, cy] = true;
@@ -215,9 +225,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     var previous = grid[x - 1, y];
 
                     if (current == null || previous == null 
-                        || current.Model.State == BlockState.Falling 
                         || current.Model.State == BlockState.Destroying
-                        || previous.Model.State == BlockState.Falling
                         || previous.Model.State == BlockState.Destroying)
                     {
                         count = 1;
@@ -250,9 +258,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
                     var previous = grid[x, y - 1];
 
                     if (current == null || previous == null 
-                        || current.Model.State == BlockState.Falling 
                         || current.Model.State == BlockState.Destroying
-                        || previous.Model.State == BlockState.Falling
                         || previous.Model.State == BlockState.Destroying)
                     {
                         count = 1;
@@ -313,16 +319,6 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
             if (fallTasks.Count > 0)
                 await UniTask.WhenAll(fallTasks).AttachExternalCancellation(token);
-
-            foreach (var column in ActiveColumns)
-            {
-                foreach (var cell in column.Cells)
-                {
-                    var block = cell.PlayableBlockPresenter;
-                    if (block != null && block.Model.State == BlockState.Falling)
-                        block.Model.State = BlockState.Idle;
-                }
-            }
 
             return moved;
         }
