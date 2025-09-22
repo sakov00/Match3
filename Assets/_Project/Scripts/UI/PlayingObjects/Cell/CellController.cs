@@ -81,6 +81,7 @@ namespace _Project.Scripts.UI.PlayingObjects.Cell
         {
             OnBeginedDrag = null;
             OnEndedDrag = null;
+            PlayableBlockPresenter?.ReturnToPool();
             PlayableBlockPresenter = null;
             Model.PlayableBlockModel = null;
         }

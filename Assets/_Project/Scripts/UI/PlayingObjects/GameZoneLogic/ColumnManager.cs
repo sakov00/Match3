@@ -331,10 +331,10 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
         private async UniTask MoveBlockAnim(PlayableBlockPresenter block, CellController targetCell, CancellationToken token)
         {
             block.transform.DOComplete(true);
-            token.Register(() => block.transform.DOComplete(true));
+            using var reg = token.Register(() => block.transform.DOComplete(true));
 
             token.ThrowIfCancellationRequested();
-            await block.transform.DOMove(targetCell.transform.position, 0.25f);
+            await block.transform.DOMove(targetCell.transform.position, 0.25f).WithCancellation(token);
         }
 
         public void SubscribeToActiveCells(Action<PointerEventData, CellController> onBeginDrag,

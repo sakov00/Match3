@@ -15,7 +15,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             var oldBlock = oldCell.PlayableBlockPresenter;
             
             oldBlock.transform.DOComplete(true);
-            token.Register(() => oldBlock.transform.DOComplete(true));
+            using var oldReg = token.Register(() => oldBlock.transform.DOComplete(true));
             
             if (direction == Vector2Int.up || direction == Vector2Int.right || direction == Vector2Int.left)
                 oldBlock.transform.SetParent(targetCell.transform, true);
@@ -39,8 +39,8 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
             oldBlock.transform.DOComplete(true);
             targetBlock.transform.DOComplete(true);
 
-            token.Register(() => oldBlock.transform.DOComplete(true));
-            token.Register(() => targetBlock.transform.DOComplete(true));
+            using var oldReg = token.Register(() => oldBlock.transform.DOComplete(true));
+            using var targetReg = token.Register(() => targetBlock.transform.DOComplete(true));
             
             if (direction == Vector2Int.up) oldBlock.transform.SetParent(targetCell.transform, true);
             if (direction == Vector2Int.down) targetBlock.transform.SetParent(oldCell.transform, true);

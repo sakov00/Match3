@@ -28,7 +28,7 @@ namespace _Project.Scripts.UI.PlayingObjects.PlayableBlock
             InjectManager.Inject(this);
             _objectsRegistry.Register(this);
             Model.State = BlockState.Idle;
-            View.IdleAnim().Forget();
+            View.Initialize();
         }
 
         public async UniTask DestroyAnimStart(CancellationToken token)

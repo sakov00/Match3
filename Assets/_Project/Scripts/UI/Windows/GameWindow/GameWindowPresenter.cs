@@ -14,7 +14,7 @@ using GameZone = _Project.Scripts.UI.PlayingObjects.GameZoneLogic.GameZone;
 
 namespace _Project.Scripts.UI.Windows.GameWindow
 {
-    public class GameWindowPresenter : BaseWindowPresenter
+    public class GameWindowPresenter : BaseWindowPresenter, IDisposable
     {
         [Inject] private AppData _appData;
         [Inject] private FileLevelManager _fileLevelManager;
@@ -44,10 +44,11 @@ namespace _Project.Scripts.UI.Windows.GameWindow
 
         private async UniTaskVoid NextLevel()
         {
-            Dispose();
+            _gameManager.Dispose();
+            _disposables?.Dispose();
             _appData.User.CurrentLevel += 1;
             await _windowsManager.ShowWindow<LoadingWindowPresenter>();
-            _view.Dispose();
+            Dispose();
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
             await _windowsManager.HideWindow<LoadingWindowPresenter>();
@@ -55,10 +56,11 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         
         private async UniTaskVoid RestartLevel()
         {
-            Dispose();
+            _gameManager.Dispose();
+            _disposables?.Dispose();
             _fileLevelManager.RemoveProgress(_appData.User.CurrentLevel);
             await _windowsManager.ShowWindow<LoadingWindowPresenter>();
-            _view.Dispose();
+            Dispose();
             await _gameManager.StartLevel(_appData.User.CurrentLevel);
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
             await _windowsManager.HideWindow<LoadingWindowPresenter>();
@@ -78,6 +80,7 @@ namespace _Project.Scripts.UI.Windows.GameWindow
         {
             _disposables?.Dispose();
             _appData.LevelEvents.WinEvent -= WinHandle;
+            _view.Dispose();
             _gameZone.Dispose();
         }
     }

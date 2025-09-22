@@ -64,6 +64,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   <Model>k__BackingField:
+    <State>k__BackingField: 0
     <GroupId>k__BackingField: 0
   <View>k__BackingField: {fileID: 6656652952167071282}
 --- !u!114 &6656652952167071282
@@ -78,6 +79,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4eabc7d259a4774a39ff24751758e0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _rectTransform: {fileID: 7761291094025987647}
   _uiTextureSheetAnimator: {fileID: 3366629189572216794}
 --- !u!1 &6741520838388603599
 GameObject:
