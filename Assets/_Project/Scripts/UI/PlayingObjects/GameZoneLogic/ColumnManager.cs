@@ -105,8 +105,7 @@ namespace _Project.Scripts.UI.PlayingObjects.GameZoneLogic
 
                         foreach (var pos in connected)
                         {
-                            var cell = ActiveColumns[pos.x].Cells[pos.y];
-                            var b = cell.PlayableBlockPresenter;
+                            var b = grid[pos.x, pos.y];
                             if (b != null && block.Model.State != BlockState.Destroying && b.Model.State != BlockState.PredictDestroy)
                             {
                                 b.Model.State = BlockState.PredictDestroy;
